@@ -47,8 +47,7 @@ def coords_to_bit(coords):
     return row*9 + col
 
 def bit_to_coords(bit):
-    modulo = bit % 9
-    return (modulo, math.floor(modulo)*9)
+    return (math.floor(bit / 9), bit % 9)
 
 
 def print_board():
