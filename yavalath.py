@@ -64,7 +64,9 @@ def bit_to_coords(bit):
 
 
 def print_board():
+    print("      0 1 2 3 4")
     for row in range(9):
+        print(str(row) + " ", end="")
         for _ in range(abs(4-row)):
             print(" ", end="")
 
@@ -89,14 +91,15 @@ def print_board():
                     print(current_turn, end="")
             else:
                 print("* ", end="")
-
+        if 5 + row < 9:
+            print(str(5+row), end="")
         print("")
 
 
 
 
 if __name__ == '__main__':
-    mode = "game-2p"
+    mode = "test"
 
     if mode == "test":
         x = do_move((0,0))
