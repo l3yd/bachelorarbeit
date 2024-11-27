@@ -1,10 +1,8 @@
 import math
 
-board = int('0',2)
+current = int('0',2)
 full = int('0',2)
-
-def create_empty_board():
-    return int('0',2)
+move_count = 0
 
 def is_end():
     """
@@ -13,6 +11,8 @@ def is_end():
         -1 if player loses
         0 if game continues
     """
+
+    board = full ^ current
 
     """ WINS """
     # vertical (1-er Schritte)
@@ -35,10 +35,23 @@ def is_end():
     return 0
 
 def do_move(coords):
+    """
+    returns result of is_end after given move
+    """
+    global current
+    global full
+    global move_count
+
     bit = coords_to_bit(coords)
-    return board | (1 << bit)
+    current ^= full
+    full |= (1<<bit)
+    move_count += 1
+    return is_end()
 
 def undo_move(coords):
+    """
+    broken
+    """
     bit = coords_to_bit(coords)
     return board & ~(1 << bit)
 
@@ -64,7 +77,18 @@ def print_board():
 
         for col in range(first_col, last_col+1):
             bit = coords_to_bit((row, col))
-            print(str((board >> bit) & 1) + " ", end="")
+            next_turn = "0 "
+            current_turn = "X "
+            if move_count % 2 == 0:
+                next_turn = "X "
+                current_turn = "O "
+            if (full >> bit) & 1 == 1:
+                if (current >> bit) & 1 == 1:
+                    print(next_turn, end="")
+                else:
+                    print(current_turn, end="")
+            else:
+                print("* ", end="")
 
         print("")
 
@@ -72,8 +96,29 @@ def print_board():
 
 
 if __name__ == '__main__':
-    board = do_move((0,0))
-    board = do_move((1,1))
-    board = do_move((2,3))
-    print_board()
-    print(is_end())
+    mode = "game-2p"
+
+    if mode == "test":
+        x = do_move((0,0))
+        x = do_move((1,1))
+        x = do_move((2,2))
+        x = do_move((3,3))
+        x = do_move((4,4))
+        print_board()
+    elif mode == "game-2p":
+        print("Provide moves in the format: x y")
+        player = 1
+        while True:
+            move = input("Player " + str(player) + ", please provide a move: ")
+            print("")
+            print("")
+            coords = move.split()
+            result = do_move((int(coords[0]),int(coords[1])))
+            print_board()
+            if result == 1:
+                print("Player " + str(player) + " wins!")
+                break
+            player = (player % 2) +1
+            if result == -1:
+                print("Player " + str(player) + " wins!")
+                break
