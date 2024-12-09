@@ -16,9 +16,14 @@ class Board:
         function returns:
             1 if player wins
             -1 if player loses
+            0.5 if the game is a draw
             0 if game continues
         """
 
+        """ DRAW """
+        if self.full == int("111110000111111000111111100111111110111111111011111111001111111000111111000011111", 2):
+            return 0.5
+        
         board = self.full ^ self.current
 
         """ WINS """
