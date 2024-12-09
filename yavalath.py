@@ -1,8 +1,18 @@
 import math
 
-current = int('0',2)
-full = int('0',2)
-move_count = 0
+current: int
+full: int
+move_count: int
+
+
+def setup_board():
+    global current
+    global full
+    global move_count
+
+    current = 0
+    full = 0
+    move_count = 0
 
 def is_end():
     """
@@ -96,32 +106,36 @@ def print_board():
         print("")
 
 
+### TESTING
 
+def game2p():
+    setup_board()
+    print("Provide moves in the format: x y")
+    player = 1
+    while True:
+        move = input("Player " + str(player) + ", please provide a move: ")
+        print("")
+        print("")
+        coords = move.split()
+        result = do_move((int(coords[0]),int(coords[1])))
+        print_board()
+        if result == 1:
+            print("Player " + str(player) + " wins!")
+            break
+        player = (player % 2) +1
+        if result == -1:
+            print("Player " + str(player) + " wins!")
+            break
+
+def basic_test():
+    setup_board()
+    x = do_move((0,0))
+    x = do_move((1,1))
+    x = do_move((2,2))
+    x = do_move((3,3))
+    x = do_move((4,4))
+    print_board()
 
 if __name__ == '__main__':
-    mode = "test"
-
-    if mode == "test":
-        x = do_move((0,0))
-        x = do_move((1,1))
-        x = do_move((2,2))
-        x = do_move((3,3))
-        x = do_move((4,4))
-        print_board()
-    elif mode == "game-2p":
-        print("Provide moves in the format: x y")
-        player = 1
-        while True:
-            move = input("Player " + str(player) + ", please provide a move: ")
-            print("")
-            print("")
-            coords = move.split()
-            result = do_move((int(coords[0]),int(coords[1])))
-            print_board()
-            if result == 1:
-                print("Player " + str(player) + " wins!")
-                break
-            player = (player % 2) +1
-            if result == -1:
-                print("Player " + str(player) + " wins!")
-                break
+    basic_test()
+    #game2p()
