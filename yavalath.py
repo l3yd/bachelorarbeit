@@ -1,10 +1,10 @@
 import math
 
 class Board:
-    def __init__(self):
-        self.current = 0
-        self.full = 0
-        self.move_count = 0
+    def __init__(self, current=0, full=0, move_count=0):
+        self.current = current
+        self.full = full
+        self.move_count = move_count
 
     def reset_board(self):
         self.current = 0
@@ -46,7 +46,7 @@ class Board:
         
         return 0
 
-    def do_move(self, coords):
+    def do_move(self, coords) -> int:
         """
         returns result of is_end after given move
         """
@@ -56,6 +56,11 @@ class Board:
         self.full |= (1<<bit)
         self.move_count += 1
         return self.is_end()
+    
+    def simulate_move(self, coords) -> object:
+        new_board = Board(self.current, self.full, self.move_count)
+        result = new_board.do_move(coords)
+        return new_board
 
     """
     def undo_move(coords):
