@@ -7,11 +7,13 @@ def basic_test(b: yav.Board):
     b.reset_board()
     x = b.do_move((0,0))
     x = b.do_move((1,1))
-    x = b.do_move((2,2))
+    x = b.do_move((0,1))
     x = b.do_move((3,3))
-    x = b.do_move((4,4))
+    x = b.do_move((0,4))
+    x = b.do_move((5,5))
+    x = b.do_move((0,2))
     b.print_board()
-    print()
+    print(alg.evaluate(b))
     print("is_end: " + str(x))
 
 
