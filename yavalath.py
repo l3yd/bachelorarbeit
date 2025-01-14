@@ -57,10 +57,10 @@ class Board:
         self.move_count += 1
         return self.is_end()
     
-    def simulate_move(self, coords) -> object:
+    def simulate_move(self, coords):
         new_board = Board(self.current, self.full, self.move_count)
         result = new_board.do_move(coords)
-        return new_board
+        return new_board, self.is_end()
 
     """
     def undo_move(coords):
