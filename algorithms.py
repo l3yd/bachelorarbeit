@@ -20,6 +20,92 @@ def get_possible_actions(board: yav.Board) -> list:
             moves.append(yav.bit_to_coords(i))
     return moves
 
+
+### Alpha-Beta
+class Alpha_Beta:
+    def __init__(self, board: yav.Board, search_depth = 4):
+        self.board = board
+        self.search_depth = search_depth
+        self.best_move = None
+
+    def alpha_beta(self):
+        inf = math.inf
+        self._nega_max(self.board, self.search_depth, -inf, inf)
+
+        if self.best_move != None:
+            return self.best_move
+        else:
+            # TODO: dieser Fall trifft zu früh / oft ein!
+            print("ERROR: Game should allready be over!")
+            return (0,0)
+
+
+    def _nega_max(self, board: yav.Board, depth, alpha, beta):
+        if depth == 0 or board.move_count == 61:
+            return self.evaluate(board)
+        
+        max_value = alpha
+        for move in get_possible_actions(board):
+            new_board, result = board.simulate_move(move)
+            value = -(self._nega_max(new_board, depth-1, -beta, -max_value))
+            if value > max_value:
+                max_value = value
+                if depth == self.search_depth:
+                    self.best_move = move
+                if max_value >= beta:
+                    break
+        
+        return max_value
+
+
+    """
+    TODO: evaluate beachtet bisher nicht die steine des gegners
+    """
+    def evaluate(self, board: yav.Board, p_two_row = 1, p_one_gap = 2, p_two_gap = 3, p_four_thread = 4):
+        result = board.is_end()
+        if result != 0:
+            if result == 0.5:
+                return 0
+            return math.inf * result
+
+        bitboard = board.full ^ board.current # steine des spielers der als letztes einen platziert hat ??
+        #bitboard = board.current
+
+        # two_in_a_row = int("11",2)
+        ver_two_row = bitboard & (bitboard >> 1)
+        diag_bt_two_row = bitboard & (bitboard >> 9)
+        diag_tb_two_row = bitboard & (bitboard >> 10)
+        n_two_row = ver_two_row.bit_count() + diag_bt_two_row.bit_count() + diag_tb_two_row.bit_count()
+
+        # one_gap = int("101",2)
+        ver_one_gap = bitboard & (bitboard >> 2)
+        diag_bt_one_gap = bitboard & (bitboard >> 18)
+        diag_tb_one_gap = bitboard & (bitboard >> 20)
+        n_one_gap = ver_one_gap.bit_count() + diag_bt_one_gap.bit_count() + diag_tb_one_gap.bit_count()
+
+        # two_gap = int("1001",2)
+        ver_two_gap = bitboard & (bitboard >> 3)
+        diag_bt_two_gap = bitboard & (bitboard >> 27)
+        diag_tb_two_gap = bitboard & (bitboard >> 30)
+        n_two_gap = ver_two_gap.bit_count() + diag_bt_two_gap.bit_count() + diag_tb_two_gap.bit_count()
+
+        # four_thread_1 = int("1101",2)
+        ver = ver_two_row & ver_two_gap
+        diag_bottom_top = diag_bt_two_row & diag_bt_two_gap
+        diag_top_bottom = diag_tb_two_row & diag_tb_two_gap
+        n_four_thread = ver.bit_count() + diag_bottom_top.bit_count() + diag_top_bottom.bit_count()
+
+        # four_thread_2 = int("1011",2)
+        ver = ver_one_gap & ver_two_gap
+        diag_bottom_top = diag_bt_one_gap & diag_bt_two_gap
+        diag_top_bottom = diag_tb_one_gap & diag_tb_two_gap
+        n_four_thread += ver.bit_count() + diag_bottom_top.bit_count() + diag_top_bottom.bit_count()
+
+        return (n_two_row * p_two_row) + (n_one_gap * p_one_gap) + (n_two_gap * p_two_gap) + (n_four_thread * p_four_thread)    
+
+
+### MCTS
+
 class MCTNode:
     def __init__(self, board: yav.Board, parent=None):
         self.state = board
@@ -30,38 +116,18 @@ class MCTNode:
         self.a = None
         self.parent = parent
 
-### Alpha-Beta
-def evaluate(board: yav.Board):
-    result = board.is_end()
-    if result != 0:
-        if result == 0.5:
-            return 0
-        return math.inf * result
-    
-    return 0
-
-def alpha_beta(board: yav.Board, turn: int):
-    search_depth = 4
-    inf = math.inf
-    if turn % 2 != 0:
-        return _maximize(search_depth, -inf, inf)
-    return _minimize(search_depth, -inf, inf)
-
-def _maximize(depth, alpha, beta):
-    return 0
-
-def _minimize(depth, alpha, beta):
-    return 0
-    
-
-### MCTS
-
 def MCTS(board: yav.Board):
     root = MCTNode(board)
-    for i in range(10000):
+    for i in range(2000):
         v = _selection(root)
         reward = _simulation(v.state)
         _backpropagation_negamax(v, reward)
+    """
+    for c in root.child_nodes:
+        print(str(c.q) + str(c.a)+ str(c.n))
+        
+    print(_UCT(root, 0).a)
+    """
     return _UCT(root, 0).a
 
 def _selection(node: MCTNode) -> MCTNode:
@@ -74,13 +140,13 @@ def _selection(node: MCTNode) -> MCTNode:
 
 def _expansion(node: MCTNode) -> MCTNode:
     a = node.actions.pop()
-    child_state = node.state.simulate_move(a)
+    child_state, result = node.state.simulate_move(a)
     child = MCTNode(child_state, node)
     child.a = a
     node.child_nodes.append(child)
     return child
 
-def _UCT(node: MCTNode, c = 1.5) -> MCTNode:
+def _UCT(node: MCTNode, c = 0.8) -> MCTNode:
     num_children = len(node.child_nodes)
     values = np.zeros(num_children)
     for i in range(num_children):
@@ -88,10 +154,11 @@ def _UCT(node: MCTNode, c = 1.5) -> MCTNode:
     return node.child_nodes[np.argmax(values)]
 
 def _simulation(state: yav.Board) -> int:
-    while state.is_end() == 0:
+    result = state.is_end()
+    while result == 0:
         actions = get_possible_actions(state)
-        state = state.simulate_move(actions[np.random.randint(0, len(actions))])
-    return state.is_end()
+        state, result = state.simulate_move(actions[np.random.randint(0, len(actions))])
+    return result * (61 - state.move_count)
 
 def _backpropagation_negamax(node: MCTNode, reward):
     while node is not None:
@@ -99,7 +166,3 @@ def _backpropagation_negamax(node: MCTNode, reward):
         node.q += reward
         reward = -reward
         node = node.parent
-
-if __name__ == '__main__':
-    b = yav.Board()
-    print(MCTS(b))
