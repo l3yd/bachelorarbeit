@@ -23,16 +23,19 @@ def get_possible_actions(board: yav.Board) -> list:
 
 ### Alpha-Beta
 class Alpha_Beta:
-    def __init__(self, board: yav.Board, search_depth = 4):
+    def __init__(self, board: yav.Board, search_depth = 3):
         self.board = board
         self.search_depth = search_depth
         self.best_move = None
+        self.checks = 0
 
     def alpha_beta(self):
         inf = math.inf
         self._nega_max(self.board, self.search_depth, -inf, inf)
 
         if self.best_move != None:
+            new_board = self.board.simulate_move(self.best_move)[0]
+            print("Best move: " + str(self.evaluate(new_board)))
             return self.best_move
         else:
             # TODO: dieser Fall trifft zu früh / oft ein!
@@ -48,6 +51,9 @@ class Alpha_Beta:
         for move in get_possible_actions(board):
             new_board, result = board.simulate_move(move)
             value = -(self._nega_max(new_board, depth-1, -beta, -max_value))
+            if value != 0:
+                print(str(value) + " " + str(depth))
+            #print(str(value) + " " + str(max_value) + " " + str(self.best_move))
             if value > max_value:
                 max_value = value
                 if depth == self.search_depth:
@@ -61,7 +67,7 @@ class Alpha_Beta:
     """
     TODO: evaluate beachtet bisher nicht die steine des gegners
     """
-    def evaluate(self, board: yav.Board, p_two_row = 1, p_one_gap = 2, p_two_gap = 3, p_four_thread = 4):
+    def evaluate(self, board: yav.Board, p_two_row = 2, p_one_gap = -10, p_two_gap = 10, p_four_thread = 20):
         result = board.is_end()
         if result != 0:
             if result == 0.5:
@@ -101,8 +107,42 @@ class Alpha_Beta:
         diag_top_bottom = diag_tb_one_gap & diag_tb_two_gap
         n_four_thread += ver.bit_count() + diag_bottom_top.bit_count() + diag_top_bottom.bit_count()
 
-        return (n_two_row * p_two_row) + (n_one_gap * p_one_gap) + (n_two_gap * p_two_gap) + (n_four_thread * p_four_thread)    
+        return (n_two_row * p_two_row) + (n_one_gap * p_one_gap) + (n_two_gap * p_two_gap) + (n_four_thread * p_four_thread)
 
+
+### Mini-Max
+
+class MiniMax:
+    def __init__(self, board: yav.Board):
+        self.move = None
+        self.search_depth = 3
+        self.board = board
+
+    def main(self):
+        self.mini_max(self.board, self.search_depth)
+        if self.move == None:
+            print("No more moves possible!")
+        else:
+            return self.move
+        
+    def mini_max(self, board: yav.Board, depth):
+        if depth == 0 or board.move_count == 61:
+            return self.evaluate(board)
+        max_value = -math.inf
+        for move in get_possible_actions(board):
+            new_board = board.simulate_move(move)[0]
+            value = -self.mini_max(new_board, depth-1)
+            if value > max_value:
+                max_value = value
+                if depth == self.search_depth:
+                    self.move = move
+        return max_value
+        
+    def evaluate(self, board: yav.Board) -> int:
+        result = board.is_end()
+        if result == 0.5:
+            return 0
+        return result
 
 ### MCTS
 

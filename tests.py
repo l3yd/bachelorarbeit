@@ -133,6 +133,35 @@ def mcts_vs_ab(b: yav.Board):
                 print("Alpha-Beta wins!")
             break
 
+def minimax_vs_mcts(b):
+    print()
+    player = np.random.randint(1,3)
+    print()
+    b.print_board()
+    while True:
+        if player == 1:
+            coords = alg.MiniMax(b).main()
+        else:
+            coords = alg.MCTS(b)
+        print("")
+        print("")
+        result = b.do_move((int(coords[0]),int(coords[1])))
+        b.print_board()
+        if result == 1:
+            if player == 1:
+                print("MinMax wins!")
+            else:
+                print("MCTS wins!")
+            break
+        if result == -1:
+            if player == 1:
+                print("MCTS wins!")
+            else:
+                print("MiniMax wins!")
+            break
+        player = (player % 2) +1
+
+
 if __name__ == '__main__':
     Board = yav.Board()
     arg = sys.argv[1]
@@ -150,8 +179,8 @@ if __name__ == '__main__':
         Board.full = int("11000000111",2)
         Board.current = int("100",2)
         eval_ab(Board)
-    elif arg == "mcts_vs_ab":
-        Board.full = int("10000000000001000001111000001111",2)
+    elif arg == "mcts_vs_ab_extra":
+        """Board.full = int("10000000000001000001111000001111",2)
         Board.current = int("00000000000001000000011000001100",2)
         Board.move_count = 10
         evaluation = alg.Alpha_Beta(Board).evaluate(Board)
@@ -162,7 +191,20 @@ if __name__ == '__main__':
         Board.move_count = 10
         evaluation = alg.Alpha_Beta(Board).evaluate(Board)
         print(evaluation)
+        Board.print_board()"""
+        Board.full = int("10000000000000000000000000000000000000000000000000000000000000000001",2)
+        Board.current = int("1",2)
+        Board.move_count = 2
+        Board.print_board()
+        coords = alg.Alpha_Beta(Board).alpha_beta()
+        print("")
+        print("")
+        result = Board.do_move((int(coords[0]),int(coords[1])))
         Board.print_board()
         #mcts_vs_ab(Board)
+    elif arg == "mcts_vs_ab":
+        mcts_vs_ab(Board)
+    elif arg == "minimax_vs_mcts":
+        minimax_vs_mcts(Board)
     else:
         print("Provide a test from this list: basic, g2p, gMCTS, mcts_states, mcts_2, eval_ab")
