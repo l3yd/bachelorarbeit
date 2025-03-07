@@ -161,6 +161,83 @@ def minimax_vs_mcts(b):
             break
         player = (player % 2) +1
 
+def minimax_vs_player(b):
+    b.reset_board()
+    print()
+    print("Provide moves in the format: x y")
+    player = np.random.randint(1,3)
+    player = 2
+    if player == 1:
+        print("Player starts!")
+    else:
+        print("Minimax starts!")
+    print()
+    b.print_board()
+    while True:
+        if player == 1:
+            move = input("Player " + str(player) + ", please provide a move: ")
+            coords = move.split()
+        else:
+            coords = alg.MiniMax(b).main()
+        print("")
+        print("")
+        result = b.do_move((int(coords[0]),int(coords[1])))
+        b.print_board()
+        if result == 1:
+            if player == 1:
+                print("Player wins!")
+            else:
+                print("Minmax wins!")
+            break
+        player = (player % 2) +1
+        if result == -1:
+            if player == 1:
+                print("Player wins!")
+            else:
+                print("Minimax wins!")
+            break
+
+def minimax_2(b):
+    b.reset_board()
+    print()
+    print("Provide moves in the format: x y")
+    player = np.random.randint(1,3)
+    print()
+    b.print_board()
+    while True:
+        if player == 1:
+            move = input("Player " + str(player) + ", please provide a move: ")
+            coords = move.split()
+        else:
+            coords = alg.MCTS(b)
+        print("")
+        print("")
+        result = b.do_move((int(coords[0]),int(coords[1])))
+        b.print_board()
+        if result == 1:
+            print("Player " + str(player) + " wins!")
+            break
+        player = (player % 2) +1
+        if result == -1:
+            print("Player " + str(player) + " wins!")
+            break
+
+def create_test_board(b):
+    coords = [(2,6), (3,0), (3,2), (3,3), (6,3)]
+    for i in range(len(coords)):
+        b.full |= (1<<yav.coords_to_bit(coords[i]))
+    coords = [(1,1), (4,0), (4,7), (5,8)]
+    for i in range(len(coords)):
+        b.current |= (1<<yav.coords_to_bit(coords[i]))
+    b.full |= b.current
+    b.move_count = 9
+    b.print_board()
+    return b
+
+def one_position_minimax(b):
+    coords = alg.MiniMax(b).main()
+    b.do_move(coords)
+    b.print_board()
 
 if __name__ == '__main__':
     Board = yav.Board()
@@ -206,5 +283,12 @@ if __name__ == '__main__':
         mcts_vs_ab(Board)
     elif arg == "minimax_vs_mcts":
         minimax_vs_mcts(Board)
+    elif arg == "minimax_vs_player":
+        minimax_vs_player(Board)
+    elif arg == "minimax_2":
+        minimax_2(Board)
+    elif arg == "one_position_minimax":
+        Board = create_test_board(Board)
+        one_position_minimax(Board)
     else:
         print("Provide a test from this list: basic, g2p, gMCTS, mcts_states, mcts_2, eval_ab")

@@ -115,10 +115,11 @@ class Alpha_Beta:
 class MiniMax:
     def __init__(self, board: yav.Board):
         self.move = None
-        self.search_depth = 3
+        self.search_depth = 2
         self.board = board
 
     def main(self):
+        print()
         self.mini_max(self.board, self.search_depth)
         if self.move == None:
             print("No more moves possible!")
@@ -129,12 +130,23 @@ class MiniMax:
         if depth == 0 or board.move_count == 61:
             return self.evaluate(board)
         max_value = -math.inf
-        for move in get_possible_actions(board):
+        possible_moves = get_possible_actions(board)
+        #np.random.shuffle(possible_moves)
+        for move in possible_moves:
             new_board = board.simulate_move(move)[0]
+            if depth == self.search_depth:
+                print()
+                print(str(move) + " :")
             value = -self.mini_max(new_board, depth-1)
             if value > max_value:
+                if max_value == -math.inf:
+                    max_value = '€'
+                print(str(max_value) + " -> " + str(value) + " | " + str(move) + " @ " + str(depth))
+                if max_value == '€':
+                    max_value = -math.inf
                 max_value = value
                 if depth == self.search_depth:
+                    #print("Oben!")
                     self.move = move
         return max_value
         
@@ -142,7 +154,7 @@ class MiniMax:
         result = board.is_end()
         if result == 0.5:
             return 0
-        return result
+        return -result
 
 ### MCTS
 

@@ -19,10 +19,6 @@ class Board:
             0.5 if the game is a draw
             0 if game continues
         """
-
-        """ DRAW """
-        if self.full == int("111110000111111000111111100111111110111111111011111111001111111000111111000011111", 2):
-            return 0.5
         
         board = self.full ^ self.current
 
@@ -44,6 +40,10 @@ class Board:
         if ver != 0 or diag_bottom_top != 0 or diag_top_bottom != 0:
             return -1
         
+        """ DRAW """
+        if self.full == int("111110000111111000111111100111111110111111111011111111001111111000111111000011111", 2):
+            return 0.5
+        
         return 0
 
     def do_move(self, coords) -> int:
@@ -60,7 +60,7 @@ class Board:
     def simulate_move(self, coords):
         new_board = Board(self.current, self.full, self.move_count)
         result = new_board.do_move(coords)
-        return new_board, self.is_end()
+        return new_board, result
 
     """
     def undo_move(coords):
