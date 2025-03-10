@@ -11,7 +11,7 @@ class Board:
         self.full = 0
         self.move_count = 0
 
-    def is_end(self):
+    def is_end(self, check_opponent=False) -> int:
         """
         function returns:
             1 if player wins
@@ -21,6 +21,9 @@ class Board:
         """
         
         board = self.full ^ self.current
+
+        if check_opponent:
+            board = self.current
 
         """ WINS """
         # vertical (1-er Schritte)
@@ -45,6 +48,14 @@ class Board:
             return 0.5
         
         return 0
+    
+    def is_end_opponent(self) -> int:
+        result = self.is_end()
+        if result == 0:
+            result = self.is_end(True)
+            if result != 0.5:
+                result = -result
+        return result
 
     def do_move(self, coords) -> int:
         """

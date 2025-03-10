@@ -115,8 +115,10 @@ class Alpha_Beta:
 class MiniMax:
     def __init__(self, board: yav.Board):
         self.move = None
-        self.search_depth = 2
+        self.search_depth = 3
         self.board = board
+        """self.parent_move = None
+        self.move_at_two = None"""
 
     def main(self):
         print()
@@ -133,29 +135,48 @@ class MiniMax:
         possible_moves = get_possible_actions(board)
         #np.random.shuffle(possible_moves)
         for move in possible_moves:
+
+            #testblock
+            """if depth == 2 and move != (2,1):
+                continue
+            if depth == self.search_depth:
+                self.parent_move = move
+            if depth == 2:
+                self.move_at_two = move"""
+
             new_board = board.simulate_move(move)[0]
-            """if depth == self.search_depth:
+            
+            #printblock
+            """if depth == self.search_depth and (self.parent_move == (1,0) or self.parent_move == (1,0)):
                 print()
                 print(str(move) + " :")"""
+
             if depth == self.search_depth and new_board.is_end() == 1:
                 self.move = move
                 break
             value = -self.mini_max(new_board, depth-1)
+            #printblock
+            """if self.parent_move == (1,0) and self.move_at_two == (2,1) and depth == 1:
+                print(str(move) + " | " + str(value))"""
             if value > max_value:
+
+                #printblock
                 """if max_value == -math.inf:
                     max_value = '€'
-                print(str(max_value) + " -> " + str(value) + " | " + str(move) + " @ " + str(depth))
+                if self.parent_move == (1,0):
+                    print(str(max_value) + " -> " + str(value) + " | " + str(move) + " @ " + str(depth))
                 if max_value == '€':
                     max_value = -math.inf"""
-                if new_board.is_end() != -1:
-                    max_value = value
-                    if depth == self.search_depth:
-                        #print("Oben!")
-                        self.move = move
+
+                if new_board.is_end() == -1:
+                    continue
+                max_value = value
+                if depth == self.search_depth:
+                    self.move = move
         return max_value
         
     def evaluate(self, board: yav.Board) -> int:
-        result = board.is_end()
+        result = board.is_end_opponent()
         if result == 0.5:
             return 0
         return -result

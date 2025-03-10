@@ -239,6 +239,34 @@ def one_position_minimax(b):
     b.do_move(coords)
     b.print_board()
 
+def create_another_test_board(b):
+    coords = [(0,1), (1,1), (3,1)]
+    for i in range(len(coords)):
+        b.full |= (1<<yav.coords_to_bit(coords[i]))
+    coords = [(0,0), (0,2), (0,3)]
+    for i in range(len(coords)):
+        b.current |= (1<<yav.coords_to_bit(coords[i]))
+    b.full |= b.current
+    b.move_count = 6
+    b.print_board()
+    return b
+
+def another_position_minimax(b):
+    coords = alg.MiniMax(b).main()
+    b.do_move(coords)
+    b.print_board()
+
+def test_is_end(b):
+    b.full |= (1<< yav.coords_to_bit((2,1)))
+    b.current |= (1<< yav.coords_to_bit((1,0)))
+    test_coord = (4,0)
+    b.current |= (1<< yav.coords_to_bit(test_coord))
+    b.full |= b.current
+    b.move_count += 3
+    b.print_board()
+    print(b.is_end())
+    print(b.is_end_opponent())
+
 if __name__ == '__main__':
     Board = yav.Board()
     arg = sys.argv[1]
@@ -290,5 +318,12 @@ if __name__ == '__main__':
     elif arg == "one_position_minimax":
         Board = create_test_board(Board)
         one_position_minimax(Board)
+    elif arg == "another_position_minimax":
+        Board = create_another_test_board(Board)
+        another_position_minimax(Board)
+    elif arg == "is_end":
+        Board = create_another_test_board(Board)
+
+        test_is_end(Board)
     else:
-        print("Provide a test from this list: basic, g2p, gMCTS, mcts_states, mcts_2, eval_ab")
+        print("Name of test not found")
