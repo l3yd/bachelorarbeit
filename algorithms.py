@@ -134,20 +134,24 @@ class MiniMax:
         #np.random.shuffle(possible_moves)
         for move in possible_moves:
             new_board = board.simulate_move(move)[0]
-            if depth == self.search_depth:
+            """if depth == self.search_depth:
                 print()
-                print(str(move) + " :")
+                print(str(move) + " :")"""
+            if depth == self.search_depth and new_board.is_end() == 1:
+                self.move = move
+                break
             value = -self.mini_max(new_board, depth-1)
             if value > max_value:
-                if max_value == -math.inf:
+                """if max_value == -math.inf:
                     max_value = '€'
                 print(str(max_value) + " -> " + str(value) + " | " + str(move) + " @ " + str(depth))
                 if max_value == '€':
-                    max_value = -math.inf
-                max_value = value
-                if depth == self.search_depth:
-                    #print("Oben!")
-                    self.move = move
+                    max_value = -math.inf"""
+                if new_board.is_end() != -1:
+                    max_value = value
+                    if depth == self.search_depth:
+                        #print("Oben!")
+                        self.move = move
         return max_value
         
     def evaluate(self, board: yav.Board) -> int:
