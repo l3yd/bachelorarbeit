@@ -133,7 +133,7 @@ class MiniMax:
             return self.evaluate(board)
         max_value = -math.inf
         possible_moves = get_possible_actions(board)
-        #np.random.shuffle(possible_moves)
+        np.random.shuffle(possible_moves)
         for move in possible_moves:
 
             #testblock
