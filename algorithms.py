@@ -65,9 +65,9 @@ class Alpha_Beta:
 
 
     """
-    TODO: evaluate beachtet bisher nicht die steine des gegners
+    TODO: z.B. |xxox-| gibt wert für x für two in a row, kann aber nicht mehr zum gewinnen genutzt werden 
     """
-    def evaluate(self, board: yav.Board, p_two_row = 2, p_one_gap = -10, p_two_gap = 10, p_four_thread = 20):
+    def evaluate(self, board: yav.Board, p_two_row = 2, p_one_gap = 5, p_two_gap = 11, p_four_thread = 23):
         result = board.is_end()
         if result != 0:
             if result == 0.5:
@@ -75,7 +75,7 @@ class Alpha_Beta:
             return math.inf * result
 
         bitboard = board.full ^ board.current # steine des spielers der als letztes einen platziert hat ??
-        #bitboard = board.current
+        opponent = board.current
 
         # two_in_a_row = int("11",2)
         ver_two_row = bitboard & (bitboard >> 1)
@@ -88,24 +88,49 @@ class Alpha_Beta:
         diag_bt_one_gap = bitboard & (bitboard >> 18)
         diag_tb_one_gap = bitboard & (bitboard >> 20)
         n_one_gap = ver_one_gap.bit_count() + diag_bt_one_gap.bit_count() + diag_tb_one_gap.bit_count()
+            #accounting for enemy
+        ver_blocked = ver_one_gap & (opponent >> 1)
+        diag_bt_blocked = diag_bt_one_gap & (opponent >> 9)
+        diag_tb_blocked = diag_tb_one_gap & (opponent >> 10)
+        n_one_gap_blocked = ver_blocked.bit_count() + diag_bt_blocked.bit_count() + diag_tb_blocked.bit_count()
+        n_one_gap -= n_one_gap_blocked
 
         # two_gap = int("1001",2)
         ver_two_gap = bitboard & (bitboard >> 3)
         diag_bt_two_gap = bitboard & (bitboard >> 27)
         diag_tb_two_gap = bitboard & (bitboard >> 30)
         n_two_gap = ver_two_gap.bit_count() + diag_bt_two_gap.bit_count() + diag_tb_two_gap.bit_count()
+            #accounting for enemy
+        ver_blocked = (ver_two_gap & (opponent >> 1)) | (ver_two_gap & (opponent >> 2))
+        diag_bt_blocked = (diag_bt_two_gap & (opponent >> 9)) | (diag_bt_two_gap & (opponent >> 18))
+        diag_tb_blocked = (diag_tb_two_gap & (opponent >> 10)) | (diag_bt_two_gap & (opponent >> 20))
+        n_two_gap_blocked = ver_blocked.bit_count() + diag_bt_blocked.bit_count() + diag_tb_blocked.bit_count()
+        n_two_gap -= n_two_gap_blocked
 
         # four_thread_1 = int("1101",2)
-        ver = ver_two_row & ver_two_gap
+        ver = ver_one_gap & ver_two_gap
         diag_bottom_top = diag_bt_two_row & diag_bt_two_gap
         diag_top_bottom = diag_tb_two_row & diag_tb_two_gap
         n_four_thread = ver.bit_count() + diag_bottom_top.bit_count() + diag_top_bottom.bit_count()
+            #accounting for enemy
+        ver_blocked = ver & (opponent >> 1)
+        diag_bt_blocked = diag_bottom_top & (opponent >> 9)
+        diag_tb_blocked = diag_top_bottom & (opponent >> 10)
+        n_four_thred_blocked = ver_blocked.bit_count() + diag_bt_blocked.bit_count() + diag_tb_blocked.bit_count()
+        
 
         # four_thread_2 = int("1011",2)
-        ver = ver_one_gap & ver_two_gap
+        ver = ver_two_row & ver_two_gap
         diag_bottom_top = diag_bt_one_gap & diag_bt_two_gap
         diag_top_bottom = diag_tb_one_gap & diag_tb_two_gap
         n_four_thread += ver.bit_count() + diag_bottom_top.bit_count() + diag_top_bottom.bit_count()
+            #accounting for enemy
+        ver_blocked = ver & (opponent >> 2)
+        diag_bt_blocked = diag_bottom_top & (opponent >> 18)
+        diag_tb_blocked = diag_top_bottom & (opponent >> 20)
+        n_four_thred_blocked += ver_blocked.bit_count() + diag_bt_blocked.bit_count() + diag_tb_blocked.bit_count()
+
+        n_four_thread -= n_four_thred_blocked
 
         return (n_two_row * p_two_row) + (n_one_gap * p_one_gap) + (n_two_gap * p_two_gap) + (n_four_thread * p_four_thread)
 

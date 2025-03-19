@@ -95,8 +95,11 @@ def mcts_2(b: yav.Board):
             break
 
 def eval_ab(board: yav.Board):
+    board.full = int("1111",2)
+    board.current = int("100",2)
     board.print_board()
-    alg.evaluate(board)
+    ab = alg.Alpha_Beta(board)
+    print(ab.evaluate(board))
 
 def mcts_vs_ab(b: yav.Board):
     #b.reset_board()
@@ -281,8 +284,6 @@ if __name__ == '__main__':
     elif arg == "mcts_2":
         mcts_2(Board)
     elif arg == "eval_ab":
-        Board.full = int("11000000111",2)
-        Board.current = int("100",2)
         eval_ab(Board)
     elif arg == "mcts_vs_ab_extra":
         """Board.full = int("10000000000001000001111000001111",2)
