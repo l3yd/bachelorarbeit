@@ -200,6 +200,42 @@ def minimax_vs_player(b):
                 print("Minimax wins!")
             break
 
+def ab_vs_player(b):
+    b.reset_board()
+    print()
+    print("Provide moves in the format: x y")
+    player = np.random.randint(1,3)
+    player = 1
+    if player == 1:
+        print("Player starts!")
+    else:
+        print("Alpha-Beta starts!")
+    print()
+    b.print_board()
+    while True:
+        if player == 1:
+            move = input("Player " + str(player) + ", please provide a move: ")
+            coords = move.split()
+        else:
+            coords = alg.Alpha_Beta(b).alpha_beta()
+        print("")
+        print("")
+        result = b.do_move((int(coords[0]),int(coords[1])))
+        b.print_board()
+        if result == 1:
+            if player == 1:
+                print("Player wins!")
+            else:
+                print("Alpha-Beta wins!")
+            break
+        player = (player % 2) +1
+        if result == -1:
+            if player == 1:
+                print("Player wins!")
+            else:
+                print("Minimax wins!")
+            break
+
 def minimax_2(b):
     b.reset_board()
     print()
@@ -270,6 +306,48 @@ def test_is_end(b):
     print(b.is_end())
     print(b.is_end_opponent())
 
+def create_test_board_ab(b):
+    coords = [(1,4), (4,6), (5,4), (8,4), (8,5), (8,7)]
+    for i in range(len(coords)):
+        b.full |= (1<<yav.coords_to_bit(coords[i]))
+    coords = [(0,0), (0,4), (1,2), (2,1), (2,5), (4,0)]
+    for i in range(len(coords)):
+        b.current |= (1<<yav.coords_to_bit(coords[i]))
+    b.full |= b.current
+    b.move_count = 12
+    b.print_board()
+    return b
+
+def one_position_ab(b):
+    ab = alg.Alpha_Beta(b)
+    coords = ab.alpha_beta()
+    correct_board = b.simulate_move((2,0))[0].simulate_move((0,1))[0].simulate_move((0,2))[0].simulate_move((0,3))[0]
+    b.do_move(coords)
+    b.print_board()
+    
+    print(ab.evaluate(b))
+    print(ab.evaluate(correct_board))
+    
+
+def create_another_test_board_ab(b):
+    coords = [(2,1), (3,3), (8,5)]
+    for i in range(len(coords)):
+        b.full |= (1<<yav.coords_to_bit(coords[i]))
+    coords = [(0,0), (1,0), (3,0)]
+    for i in range(len(coords)):
+        b.current |= (1<<yav.coords_to_bit(coords[i]))
+    b.full |= b.current
+    b.move_count = 6
+    b.print_board()
+    return b
+
+def test_full_board(b):
+    b.full = int("101100000111111000111111100111111110111111111011111111001111111000111111000011111", 2)
+    b.move_count = 61
+    ab = alg.Alpha_Beta(b)
+    coords = ab.alpha_beta()
+    print(coords)
+
 if __name__ == '__main__':
     Board = yav.Board()
     arg = sys.argv[1]
@@ -314,6 +392,8 @@ if __name__ == '__main__':
         minimax_vs_mcts(Board)
     elif arg == "minimax_vs_player":
         minimax_vs_player(Board)
+    elif arg == "ab_vs_player":
+        ab_vs_player(Board)
     elif arg == "minimax_2":
         minimax_2(Board)
     elif arg == "one_position_minimax":
@@ -324,7 +404,14 @@ if __name__ == '__main__':
         another_position_minimax(Board)
     elif arg == "is_end":
         Board = create_another_test_board(Board)
-
         test_is_end(Board)
+    elif arg == "one_position_ab":
+        Board = create_test_board_ab(Board)
+        one_position_ab(Board)
+    elif arg == "another_position_ab":
+        Board = create_another_test_board_ab(Board)
+        one_position_ab(Board)
+    elif arg == "test_full_board":
+        test_full_board(Board)
     else:
         print("Name of test not found")

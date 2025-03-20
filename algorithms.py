@@ -23,11 +23,12 @@ def get_possible_actions(board: yav.Board) -> list:
 
 ### Alpha-Beta
 class Alpha_Beta:
-    def __init__(self, board: yav.Board, search_depth = 3):
+    def __init__(self, board: yav.Board, search_depth = 4):
         self.board = board
         self.search_depth = search_depth
         self.best_move = None
         self.checks = 0
+        self.moves = [None,None,None, None]
 
     def alpha_beta(self):
         inf = math.inf
@@ -35,47 +36,64 @@ class Alpha_Beta:
 
         if self.best_move != None:
             new_board = self.board.simulate_move(self.best_move)[0]
-            print("Best move: " + str(self.evaluate(new_board)))
+            #print("Best move: " + str(self.evaluate(new_board)))
             return self.best_move
         else:
             # TODO: dieser Fall trifft zu früh / oft ein!
-            print("ERROR: Game should allready be over!")
-            return (0,0)
+            print("ERROR: Game should allready be over?!")
+            random_moves = get_possible_actions(self.board)
+            if random_moves == []:
+                return (0,0)
+            np.random.shuffle(random_moves)
+            return random_moves[0]
 
 
     def _nega_max(self, board: yav.Board, depth, alpha, beta):
         if depth == 0 or board.move_count == 61:
-            return self.evaluate(board)
+            #print(self.moves)
+            return -self.evaluate(board)
         
         max_value = alpha
         for move in get_possible_actions(board):
             new_board, result = board.simulate_move(move)
+            self.moves[depth-1] = move
             value = -(self._nega_max(new_board, depth-1, -beta, -max_value))
-            if value != 0:
-                print(str(value) + " " + str(depth))
+
+            """if self.moves[3] == (4,4) and self.moves[2] == (8,6):
+                print(str(self.moves) + " | " + str(value))"""
+            #if value != 0:
+                #print(str(value) + " " + str(depth))
             #print(str(value) + " " + str(max_value) + " " + str(self.best_move))
+            """if self.moves[3] == (2,0):
+                print(str(self.moves) + " | " + str(value) + " @ " + str(depth))"""
             if value > max_value:
+                if new_board.is_end() == -1:
+                    continue
                 max_value = value
                 if depth == self.search_depth:
                     self.best_move = move
                 if max_value >= beta:
                     break
-        
+        self.moves[depth-1] = None
         return max_value
 
 
     """
     TODO: z.B. |xxox-| gibt wert für x für two in a row, kann aber nicht mehr zum gewinnen genutzt werden 
     """
-    def evaluate(self, board: yav.Board, p_two_row = 2, p_one_gap = 5, p_two_gap = 11, p_four_thread = 23):
-        result = board.is_end()
+    def evaluate(self, board: yav.Board, defence = False, p_two_row = 2, p_one_gap = 5, p_two_gap = 11, p_four_thread = 23):
+        result = board.is_end_opponent()
         if result != 0:
             if result == 0.5:
                 return 0
             return math.inf * result
 
-        bitboard = board.full ^ board.current # steine des spielers der als letztes einen platziert hat ??
-        opponent = board.current
+        if not defence:
+            bitboard = board.full ^ board.current # steine des spielers der als letztes einen platziert hat
+            opponent = board.current
+        else:
+            bitboard = board.current
+            opponent = board.full ^ board.current
 
         # two_in_a_row = int("11",2)
         ver_two_row = bitboard & (bitboard >> 1)
@@ -131,8 +149,16 @@ class Alpha_Beta:
         n_four_thred_blocked += ver_blocked.bit_count() + diag_bt_blocked.bit_count() + diag_tb_blocked.bit_count()
 
         n_four_thread -= n_four_thred_blocked
-
-        return (n_two_row * p_two_row) + (n_one_gap * p_one_gap) + (n_two_gap * p_two_gap) + (n_four_thread * p_four_thread)
+        
+        score = (n_two_row * p_two_row) + (n_one_gap * p_one_gap) + (n_two_gap * p_two_gap) + (n_four_thread * p_four_thread)
+        if defence:
+            """if self.moves[1] == (8,6) and self.moves[0] == (0,1):
+                print("defence: " + str(score))"""
+            return score
+        else:
+            """if self.moves[1] == (8,6) and self.moves[0] == (0,1):
+                print("offence: " + str(score))"""
+            return score  - self.evaluate(board, True)
 
 
 ### Mini-Max
@@ -146,7 +172,6 @@ class MiniMax:
         self.move_at_two = None"""
 
     def main(self):
-        print()
         self.mini_max(self.board, self.search_depth)
         if self.move == None:
             print("No more moves possible!")
