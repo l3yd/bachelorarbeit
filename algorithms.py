@@ -2,24 +2,6 @@ import numpy as np
 import yavalath as yav
 import math
 
-illegalMoves = [5,6,7,8,
-                15,16,17,
-                25,26,
-                35,
-                45,
-                54,55,
-                63,64,65,
-                72,73,74,75]
-
-def get_possible_actions(board: yav.Board) -> list:
-    moves = []
-    for i in range(81):
-        if i in illegalMoves:
-            continue
-        if (board.full >> i) & 1 == 0:
-            moves.append(yav.bit_to_coords(i))
-    return moves
-
 
 ### Alpha-Beta
 class Alpha_Beta:
@@ -41,7 +23,7 @@ class Alpha_Beta:
         else:
             # TODO: dieser Fall trifft zu früh / oft ein!
             print("ERROR: Game should allready be over?!")
-            random_moves = get_possible_actions(self.board)
+            random_moves = self.board.get_possible_actions()
             if random_moves == []:
                 return (0,0)
             np.random.shuffle(random_moves)
@@ -54,7 +36,7 @@ class Alpha_Beta:
             return -self.evaluate(board)
         
         max_value = alpha
-        for move in get_possible_actions(board):
+        for move in board.get_possible_actions():
             new_board, result = board.simulate_move(move)
             self.moves[depth-1] = move
             value = -(self._nega_max(new_board, depth-1, -beta, -max_value))
@@ -182,7 +164,7 @@ class MiniMax:
         if depth == 0 or board.move_count == 61:
             return self.evaluate(board)
         max_value = -math.inf
-        possible_moves = get_possible_actions(board)
+        possible_moves = board.get_possible_actions()
         np.random.shuffle(possible_moves)
         for move in possible_moves:
 
@@ -239,7 +221,7 @@ class MCTNode:
         self.q = 0
         self.n = 0
         self.child_nodes = []
-        self.actions = get_possible_actions(board)
+        self.actions = board.get_possible_actions()
         self.a = None
         self.parent = parent
 
@@ -283,7 +265,7 @@ def _UCT(node: MCTNode, c = 0.8) -> MCTNode:
 def _simulation(state: yav.Board) -> int:
     result = state.is_end()
     while result == 0:
-        actions = get_possible_actions(state)
+        actions = state.get_possible_actions()
         state, result = state.simulate_move(actions[np.random.randint(0, len(actions))])
     return result * (61 - state.move_count)
 

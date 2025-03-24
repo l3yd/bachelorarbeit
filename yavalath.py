@@ -5,6 +5,14 @@ class Board:
         self.current = current
         self.full = full
         self.move_count = move_count
+        self.illegalMoves = [5,6,7,8,
+                            15,16,17,
+                            25,26,
+                            35,
+                            45,
+                            54,55,
+                            63,64,65,
+                            72,73,74,75]
 
     def reset_board(self):
         self.current = 0
@@ -78,6 +86,15 @@ class Board:
         bit = coords_to_bit(coords)
         return board & ~(1 << bit)
     """
+
+    def get_possible_actions(self) -> list:
+        moves = []
+        for i in range(81):
+            if i in self.illegalMoves:
+                continue
+            if (self.board.full >> i) & 1 == 0:
+                moves.append(bit_to_coords(i))
+        return moves
 
     def print_board(self):
         print("      0 1 2 3 4")
