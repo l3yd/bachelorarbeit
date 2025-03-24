@@ -92,7 +92,7 @@ class Board:
         for i in range(81):
             if i in self.illegalMoves:
                 continue
-            if (self.board.full >> i) & 1 == 0:
+            if (self.full >> i) & 1 == 0:
                 moves.append(bit_to_coords(i))
         return moves
 

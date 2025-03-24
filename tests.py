@@ -3,6 +3,47 @@ import algorithms as alg
 import sys
 import numpy as np
 
+def game(board:yav.Board, players = ["human", "human"], start = np.random.randint(1,3)):
+    board.reset_board()
+    board.print_board()
+    print("Provide moves in the format: x y")
+    turn = start
+    while True:
+        coords = find_move(players, turn, board)
+        print("")
+        print("")
+        result = board.do_move((int(coords[0]),int(coords[1])))
+        board.print_board()
+        if result == 1:
+            announce_winner(players, turn)
+            break
+        turn = (turn % 2) +1
+        if result == -1:
+            announce_winner(players, turn)
+            break
+
+def find_move(players, turn, board):
+    player = players[turn-1]
+    if player == "human":
+        move = input("Player " + str(turn) + ", please provide a move: ")
+        coords = move.split()
+    else:
+        print(str(player) + "(" + str(turn) + ")'s turn")
+        if player == "minimax":
+            coords = alg.MiniMax(board).main()
+        elif player == "alphabeta":
+            coords = alg.Alpha_Beta(board).alpha_beta()
+        else: # player == "mcts":
+            coords = alg.MCTS(board)
+    return coords
+
+def announce_winner(players, turn):
+    player = players[turn-1]
+    if player == "human":
+        print("Player " + str(turn) + " wins!")
+    else:
+        print(str(player) + "(" + str(turn) + ") wins!")
+
 def basic_test(b: yav.Board):
     b.reset_board()
     x = b.do_move((0,0))
@@ -16,54 +57,6 @@ def basic_test(b: yav.Board):
     print(alg.evaluate(b))
     print("is_end: " + str(x))
 
-
-def game2p(b: yav.Board):
-    b.reset_board()
-    b.print_board()
-    print("Provide moves in the format: x y")
-    player = 1
-    while True:
-        move = input("Player " + str(player) + ", please provide a move: ")
-        print("")
-        print("")
-        coords = move.split()
-        result = b.do_move((int(coords[0]),int(coords[1])))
-        b.print_board()
-        if result == 1:
-            print("Player " + str(player) + " wins!")
-            break
-        player = (player % 2) +1
-        if result == -1:
-            print("Player " + str(player) + " wins!")
-            break
-
-def gameMCTS(b: yav.Board):
-    b.reset_board()
-    print()
-    print("Provide moves in the format: x y")
-    player = np.random.randint(1,3)
-    player = 2
-    print("Player " + str(player) + " starts!")
-    print()
-    b.print_board()
-    while True:
-        if player == 1:
-            move = input("Player " + str(player) + ", please provide a move: ")
-            coords = move.split()
-        else:
-            coords = alg.MCTS(b)
-        print("")
-        print("")
-        result = b.do_move((int(coords[0]),int(coords[1])))
-        b.print_board()
-        if result == 1:
-            print("Player " + str(player) + " wins!")
-            break
-        player = (player % 2) +1
-        if result == -1:
-            print("Player " + str(player) + " wins!")
-            break
-
 def mcts_states(b: yav.Board):
     b.full += int("1101000001011",2)
     b.current += int("1011",2)
@@ -71,195 +64,12 @@ def mcts_states(b: yav.Board):
     alg.MCTS(b)
     b.print_board()
 
-def mcts_2(b: yav.Board):
-    b.reset_board()
-    print()
-    print("Provide moves in the format: x y")
-    player = np.random.randint(1,3)
-    player = 2
-    print("Player " + str(player) + " starts!")
-    print()
-    b.print_board()
-    while True:
-        coords = alg.MCTS(b)
-        print("")
-        print("")
-        result = b.do_move((int(coords[0]),int(coords[1])))
-        b.print_board()
-        if result == 1:
-            print("Player " + str(player) + " wins!")
-            break
-        player = (player % 2) +1
-        if result == -1:
-            print("Player " + str(player) + " wins!")
-            break
-
 def eval_ab(board: yav.Board):
     board.full = int("1111",2)
     board.current = int("100",2)
     board.print_board()
     ab = alg.Alpha_Beta(board)
     print(ab.evaluate(board))
-
-def mcts_vs_ab(b: yav.Board):
-    #b.reset_board()
-    print()
-    print("Provide moves in the format: x y")
-    player = np.random.randint(1,3)
-    player = 2
-    if player == 1:
-        print("MCTS starts!")
-    else:
-        print("Alpha-Beta starts!")
-    print()
-    b.print_board()
-    while True:
-        if player == 1:
-            coords = alg.MCTS(b)
-        else:
-            coords = alg.Alpha_Beta(b).alpha_beta()
-        print("")
-        print("")
-        result = b.do_move((int(coords[0]),int(coords[1])))
-        b.print_board()
-        if result == 1:
-            if player == 1:
-                print("MCTS wins!")
-            else:
-                print("Alpha-Beta wins!")
-            break
-        player = (player % 2) +1
-        if result == -1:
-            if player == 1:
-                print("MCTS wins!")
-            else:
-                print("Alpha-Beta wins!")
-            break
-
-def minimax_vs_mcts(b):
-    print()
-    player = np.random.randint(1,3)
-    print()
-    b.print_board()
-    while True:
-        if player == 1:
-            coords = alg.MiniMax(b).main()
-        else:
-            coords = alg.MCTS(b)
-        print("")
-        print("")
-        result = b.do_move((int(coords[0]),int(coords[1])))
-        b.print_board()
-        if result == 1:
-            if player == 1:
-                print("MinMax wins!")
-            else:
-                print("MCTS wins!")
-            break
-        if result == -1:
-            if player == 1:
-                print("MCTS wins!")
-            else:
-                print("MiniMax wins!")
-            break
-        player = (player % 2) +1
-
-def minimax_vs_player(b):
-    b.reset_board()
-    print()
-    print("Provide moves in the format: x y")
-    player = np.random.randint(1,3)
-    player = 2
-    if player == 1:
-        print("Player starts!")
-    else:
-        print("Minimax starts!")
-    print()
-    b.print_board()
-    while True:
-        if player == 1:
-            move = input("Player " + str(player) + ", please provide a move: ")
-            coords = move.split()
-        else:
-            coords = alg.MiniMax(b).main()
-        print("")
-        print("")
-        result = b.do_move((int(coords[0]),int(coords[1])))
-        b.print_board()
-        if result == 1:
-            if player == 1:
-                print("Player wins!")
-            else:
-                print("Minmax wins!")
-            break
-        player = (player % 2) +1
-        if result == -1:
-            if player == 1:
-                print("Player wins!")
-            else:
-                print("Minimax wins!")
-            break
-
-def ab_vs_player(b):
-    b.reset_board()
-    print()
-    print("Provide moves in the format: x y")
-    player = np.random.randint(1,3)
-    player = 1
-    if player == 1:
-        print("Player starts!")
-    else:
-        print("Alpha-Beta starts!")
-    print()
-    b.print_board()
-    while True:
-        if player == 1:
-            move = input("Player " + str(player) + ", please provide a move: ")
-            coords = move.split()
-        else:
-            coords = alg.Alpha_Beta(b).alpha_beta()
-        print("")
-        print("")
-        result = b.do_move((int(coords[0]),int(coords[1])))
-        b.print_board()
-        if result == 1:
-            if player == 1:
-                print("Player wins!")
-            else:
-                print("Alpha-Beta wins!")
-            break
-        player = (player % 2) +1
-        if result == -1:
-            if player == 1:
-                print("Player wins!")
-            else:
-                print("Minimax wins!")
-            break
-
-def minimax_2(b):
-    b.reset_board()
-    print()
-    print("Provide moves in the format: x y")
-    player = np.random.randint(1,3)
-    print()
-    b.print_board()
-    while True:
-        if player == 1:
-            move = input("Player " + str(player) + ", please provide a move: ")
-            coords = move.split()
-        else:
-            coords = alg.MCTS(b)
-        print("")
-        print("")
-        result = b.do_move((int(coords[0]),int(coords[1])))
-        b.print_board()
-        if result == 1:
-            print("Player " + str(player) + " wins!")
-            break
-        player = (player % 2) +1
-        if result == -1:
-            print("Player " + str(player) + " wins!")
-            break
 
 def create_test_board(b):
     coords = [(2,6), (3,0), (3,2), (3,3), (6,3)]
@@ -348,19 +158,29 @@ def test_full_board(b):
     coords = ab.alpha_beta()
     print(coords)
 
+legal_players = ["human", "minimax", "mm", "alphabeta", "ab", "mcts"]
+
 if __name__ == '__main__':
     Board = yav.Board()
     arg = sys.argv[1]
-    if arg == "basic":
+    if arg == "game":
+        player1 = sys.argv[2]
+        player2 = sys.argv[3]
+        assert player1 in legal_players and player2 in legal_players
+        players = [player1, player2]
+        for i in range(len(players)):
+            if players[i] == "mm":
+                players[i] = "minimax"
+            if players[i] == "ab":
+                players[i] = "alphabeta"
+        try:
+            game(Board, players, sys.argv[4])
+        except:
+            game(Board, players)
+    elif arg == "basic":
         basic_test(Board)
-    elif arg == "g2p":
-        game2p(Board)
-    elif arg == "gMCTS":
-        gameMCTS(Board)
     elif arg == "mcts_states":
         mcts_states(Board)
-    elif arg == "mcts_2":
-        mcts_2(Board)
     elif arg == "eval_ab":
         eval_ab(Board)
     elif arg == "mcts_vs_ab_extra":
@@ -385,17 +205,6 @@ if __name__ == '__main__':
         print("")
         result = Board.do_move((int(coords[0]),int(coords[1])))
         Board.print_board()
-        #mcts_vs_ab(Board)
-    elif arg == "mcts_vs_ab":
-        mcts_vs_ab(Board)
-    elif arg == "minimax_vs_mcts":
-        minimax_vs_mcts(Board)
-    elif arg == "minimax_vs_player":
-        minimax_vs_player(Board)
-    elif arg == "ab_vs_player":
-        ab_vs_player(Board)
-    elif arg == "minimax_2":
-        minimax_2(Board)
     elif arg == "one_position_minimax":
         Board = create_test_board(Board)
         one_position_minimax(Board)
