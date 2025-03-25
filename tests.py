@@ -5,38 +5,49 @@ import minimax as mm
 import alphabeta as ab
 import mcts
 
-def game(board:yav.Board, players = ["human", "human"], start = np.random.randint(1,3)):
+def game(board:yav.Board, players = ["human", "human"], start = np.random.randint(1,3), printing = True):
     board.reset_board()
-    board.print_board()
-    print("Provide moves in the format: x y")
+    if printing:
+        if players[0] or players[1]:
+            print("Provide moves in the format: x y")
+        board.print_board()
     turn = start
     while True:
-        coords = find_move(players, turn, board)
-        print("")
-        print("")
+        coords = find_move(players, turn, board, printing)
         result = board.do_move((int(coords[0]),int(coords[1])))
-        board.print_board()
+        if printing:
+            print("")
+            print("")
+            board.print_board()
         if result == 1:
-            announce_winner(players, turn)
-            break
+            if printing:
+                announce_winner(players, turn)
+            return turn
         turn = (turn % 2) +1
         if result == -1:
-            announce_winner(players, turn)
-            break
+            if printing:
+                announce_winner(players, turn)
+            return turn
+        print(board.move_count)
 
-def find_move(players, turn, board):
+def find_move(players, turn, board, printing):
     player = players[turn-1]
     if player == "human":
         move = input("Player " + str(turn) + ", please provide a move: ")
         coords = move.split()
     else:
-        print(str(player) + "(" + str(turn) + ")'s turn")
+        if printing:
+            print(str(player) + "(" + str(turn) + ")'s turn")
         if player == "minimax":
             coords = mm.MiniMax(board).main()
         elif player == "alphabeta":
             coords = ab.Alpha_Beta(board).alpha_beta()
-        else: # player == "mcts":
+        elif player == "mcts":
             coords = mcts.MCTS(board)
+        else: # (randomplayer):
+            actions = board.get_possible_actions()
+            np.random.shuffle(actions)
+            coords =  actions[0]
     return coords
 
 def announce_winner(players, turn):
@@ -154,12 +165,16 @@ def test_full_board_ab(b):
     coords = instance.alpha_beta()
     print(coords)
 
-legal_players = ["human", "minimax", "mm", "alphabeta", "ab", "mcts"]
+legal_players = ["human", "minimax", "mm", "alphabeta", "ab", "mcts", "random"]
 
 if __name__ == '__main__':
     Board = yav.Board()
     arg = sys.argv[1]
-    if arg == "game":
+    if arg == "game" or arg == "n_game":
+        """
+            game 'player' 'player' [staring_player]
+            n_game 'player' 'player' 'n_iterrations'
+        """
         player1 = sys.argv[2]
         player2 = sys.argv[3]
         assert player1 in legal_players and player2 in legal_players
@@ -169,10 +184,21 @@ if __name__ == '__main__':
                 players[i] = "minimax"
             if players[i] == "ab":
                 players[i] = "alphabeta"
-        try:
-            game(Board, players, sys.argv[4])
-        except:
-            game(Board, players)
+        if arg == "game":
+            try:
+                game(Board, players, int(sys.argv[4]))
+            except:
+                game(Board, players)
+        else: # arg == "n_game"
+            n_iterations = int(sys.argv[4])
+            wins = [0,0]
+            for i in range(n_iterations):
+                winner = game(Board, players, printing=False)
+                wins[winner-1] += 1
+                print("Game " + str(i+1) + " (of " + str(n_iterations) + ") is over.")
+            print(str(players[0]) + " won " + str(wins[0]) + " | " + str(players[1]) + " won " + str(wins[1]))
+            winrate = (max(wins)/n_iterations) * 100
+            print(str(winrate) + "%")
     elif arg == "basic":
         basic_test(Board)
     elif arg == "mcts_states":

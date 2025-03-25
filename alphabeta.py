@@ -19,7 +19,7 @@ class Alpha_Beta:
             new_board = self.board.simulate_move(self.best_move)[0]
             return self.best_move
         else:
-            print("ERROR: Game should allready be over?!")
+            print("ERROR: Game should already be over?!")
             random_moves = self.board.get_possible_actions()
             if random_moves == []:
                 return (0,0)
