@@ -2,6 +2,9 @@ import yavalath as yav
 import algorithms as alg
 import sys
 import numpy as np
+import minimax as mm
+import alphabeta as ab
+import mcts
 
 def game(board:yav.Board, players = ["human", "human"], start = np.random.randint(1,3)):
     board.reset_board()
@@ -30,11 +33,11 @@ def find_move(players, turn, board):
     else:
         print(str(player) + "(" + str(turn) + ")'s turn")
         if player == "minimax":
-            coords = alg.MiniMax(board).main()
+            coords = mm.MiniMax(board).main()
         elif player == "alphabeta":
-            coords = alg.Alpha_Beta(board).alpha_beta()
+            coords = ab.Alpha_Beta(board).alpha_beta()
         else: # player == "mcts":
-            coords = alg.MCTS(board)
+            coords = mcts.MCTS(board)
     return coords
 
 def announce_winner(players, turn):
@@ -54,22 +57,21 @@ def basic_test(b: yav.Board):
     x = b.do_move((5,5))
     x = b.do_move((0,2))
     b.print_board()
-    print(alg.evaluate(b))
     print("is_end: " + str(x))
 
 def mcts_states(b: yav.Board):
     b.full += int("1101000001011",2)
     b.current += int("1011",2)
     b.print_board()
-    alg.MCTS(b)
+    mcts.MCTS(b)
     b.print_board()
 
 def eval_ab(board: yav.Board):
     board.full = int("1111",2)
     board.current = int("100",2)
     board.print_board()
-    ab = alg.Alpha_Beta(board)
-    print(ab.evaluate(board))
+    instance = ab.Alpha_Beta(board)
+    print(instance.evaluate(board))
 
 def create_test_board(b):
     coords = [(2,6), (3,0), (3,2), (3,3), (6,3)]
@@ -84,7 +86,7 @@ def create_test_board(b):
     return b
 
 def one_position_minimax(b):
-    coords = alg.MiniMax(b).main()
+    coords = mm.MiniMax(b).main()
     b.do_move(coords)
     b.print_board()
 
@@ -99,11 +101,6 @@ def create_another_test_board(b):
     b.move_count = 6
     b.print_board()
     return b
-
-def another_position_minimax(b):
-    coords = alg.MiniMax(b).main()
-    b.do_move(coords)
-    b.print_board()
 
 def test_is_end(b):
     b.full |= (1<< yav.coords_to_bit((2,1)))
@@ -129,7 +126,7 @@ def create_test_board_ab(b):
     return b
 
 def one_position_ab(b):
-    ab = alg.Alpha_Beta(b)
+    ab = ab.Alpha_Beta(b)
     coords = ab.alpha_beta()
     correct_board = b.simulate_move((2,0))[0].simulate_move((0,1))[0].simulate_move((0,2))[0].simulate_move((0,3))[0]
     b.do_move(coords)
@@ -151,11 +148,11 @@ def create_another_test_board_ab(b):
     b.print_board()
     return b
 
-def test_full_board(b):
+def test_full_board_ab(b):
     b.full = int("101100000111111000111111100111111110111111111011111111001111111000111111000011111", 2)
     b.move_count = 61
-    ab = alg.Alpha_Beta(b)
-    coords = ab.alpha_beta()
+    instance = ab.Alpha_Beta(b)
+    coords = instance.alpha_beta()
     print(coords)
 
 legal_players = ["human", "minimax", "mm", "alphabeta", "ab", "mcts"]
@@ -183,34 +180,12 @@ if __name__ == '__main__':
         mcts_states(Board)
     elif arg == "eval_ab":
         eval_ab(Board)
-    elif arg == "mcts_vs_ab_extra":
-        """Board.full = int("10000000000001000001111000001111",2)
-        Board.current = int("00000000000001000000011000001100",2)
-        Board.move_count = 10
-        evaluation = alg.Alpha_Beta(Board).evaluate(Board)
-        print(evaluation)
-        Board.print_board()
-        Board.full = int("10000000001001000001111000001111",2)
-        Board.current = int("00000000001001000000011000001100",2)
-        Board.move_count = 10
-        evaluation = alg.Alpha_Beta(Board).evaluate(Board)
-        print(evaluation)
-        Board.print_board()"""
-        Board.full = int("10000000000000000000000000000000000000000000000000000000000000000001",2)
-        Board.current = int("1",2)
-        Board.move_count = 2
-        Board.print_board()
-        coords = alg.Alpha_Beta(Board).alpha_beta()
-        print("")
-        print("")
-        result = Board.do_move((int(coords[0]),int(coords[1])))
-        Board.print_board()
     elif arg == "one_position_minimax":
         Board = create_test_board(Board)
         one_position_minimax(Board)
     elif arg == "another_position_minimax":
         Board = create_another_test_board(Board)
-        another_position_minimax(Board)
+        one_position_minimax(Board)
     elif arg == "is_end":
         Board = create_another_test_board(Board)
         test_is_end(Board)
@@ -221,6 +196,6 @@ if __name__ == '__main__':
         Board = create_another_test_board_ab(Board)
         one_position_ab(Board)
     elif arg == "test_full_board":
-        test_full_board(Board)
+        test_full_board_ab(Board)
     else:
         print("Name of test not found")
