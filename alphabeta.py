@@ -2,6 +2,21 @@ import numpy as np
 import yavalath as yav
 import math
 
+# bitboards where the coordinates where the border blocks a row beeing completed are set to 1 and the rest to 0
+bb_ver_left_two_row = 226895168490722393064963
+bb_ver_left_one_gap = 75631722830240797688321
+bb_ver_right_two_row = 908468717675168296611852
+bb_ver_right_one_gap = 302822905891722765537284
+
+bb_bt_left_two_row = 9033613328809503
+bb_bt_left_one_gap = 17609382707231
+bb_bt_right_two_row = 4583872209753932562432
+bb_bt_right_one_gap = 8935423410826379264
+
+bb_tb_left_two_row = 70575306079775
+bb_tb_left_one_gap = 68853957151
+bb_tb_right_two_row = 2291942662183741030400
+bb_tb_right_one_gap = 2236041621642674176
 
 class Alpha_Beta:
     def __init__(self, board: yav.Board, search_depth = 4):
@@ -70,6 +85,20 @@ class Alpha_Beta:
         diag_bt_two_row = bitboard & (bitboard >> 9)
         diag_tb_two_row = bitboard & (bitboard >> 10)
         n_two_row = ver_two_row.bit_count() + diag_bt_two_row.bit_count() + diag_tb_two_row.bit_count()
+            #checking if there is space to finish the game with this row
+        ver_right = ver_two_row & (bb_ver_right_two_row | (board.full >> 2) | (board.full >> 3))
+        ver_left = ver_two_row & (bb_ver_left_two_row | (board.full << 1) | (board.full << 2))        
+        ver_blocked = ver_left & ver_right
+        diag_bt_right = diag_bt_two_row & (bb_bt_right_two_row | (board.full >> 18) | (board.full >> 27))
+        diag_bt_left = diag_bt_two_row & (bb_bt_left_two_row | (board.full << 9) | (board.full << 18))
+        diag_bt_blocked = diag_bt_right & diag_bt_left
+        diag_tb_right = diag_tb_two_row & (bb_tb_right_two_row | (board.full >> 20) | (board.full >> 30))
+        diag_tb_left = diag_tb_two_row & (bb_tb_left_two_row | (board.full << 10) | (board.full << 20))
+        diag_tb_blocked = diag_tb_right & diag_tb_left
+        n_two_row_blocked = ver_blocked.bit_count() + diag_bt_blocked.bit_count() + diag_tb_blocked.bit_count()
+        n_two_row -= n_two_row_blocked
+
+        
 
         # one_gap = int("101",2)
         ver_one_gap = bitboard & (bitboard >> 2)
@@ -80,6 +109,18 @@ class Alpha_Beta:
         ver_blocked = ver_one_gap & (opponent >> 1)
         diag_bt_blocked = diag_bt_one_gap & (opponent >> 9)
         diag_tb_blocked = diag_tb_one_gap & (opponent >> 10)
+        """n_one_gap_blocked = ver_blocked.bit_count() + diag_bt_blocked.bit_count() + diag_tb_blocked.bit_count()
+        n_one_gap -= n_one_gap_blocked"""
+            #checking if there is space to finish the game with this row
+        ver_right = ver_one_gap & (bb_ver_right_one_gap | (board.full >> 3))
+        ver_left = ver_one_gap & (bb_ver_left_one_gap | (board.full << 1))
+        ver_blocked |= (ver_left & ver_right)
+        diag_bt_right = diag_bt_one_gap & (bb_bt_right_one_gap | (board.full >> 27))
+        diag_bt_left = diag_bt_one_gap & (bb_bt_left_one_gap | (board.full << 9))
+        diag_bt_blocked |= (diag_bt_right & diag_bt_left)
+        diag_tb_right = diag_tb_one_gap & (bb_tb_right_one_gap | (board.full >> 30))
+        diag_tb_left = diag_tb_one_gap & (bb_tb_left_one_gap | (board.full << 10))
+        diag_tb_blocked |= (diag_tb_right & diag_tb_left)
         n_one_gap_blocked = ver_blocked.bit_count() + diag_bt_blocked.bit_count() + diag_tb_blocked.bit_count()
         n_one_gap -= n_one_gap_blocked
 

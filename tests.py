@@ -222,5 +222,33 @@ if __name__ == '__main__':
         one_position_ab(Board)
     elif arg == "test_full_board":
         test_full_board_ab(Board)
+    elif arg == "ab_borders":
+        coords = [(2,6),(4,8)]
+        coords_current = [(1,5)]
+
+        for x in coords:
+            bit = yav.coords_to_bit(x)
+            Board.full |= (1 << bit)
+        for y in coords_current:
+            bit = yav.coords_to_bit(y)
+            Board.current |= (1 << bit)
+        
+        Board.full |= Board.current
+        Board.print_board()
+        albe = ab.Alpha_Beta(Board)
+        print(albe.evaluate(Board))
+    elif arg == "generation":
+        coords = [(0,3),(1,4),(2,5),(3,6),(4,7),(6,7),(7,7),(8,7),(5,7)]
+        for x in coords:
+            bit = yav.coords_to_bit(x)
+            Board.full |= (1 << bit)
+        Board.print_board()
+        print(Board.full)
+    elif arg == "zusammen":
+        n1 = 302822905891722765537284
+        n2 = 605645811783445531074568
+        Board.full = n1 + n2
+        Board.print_board()
+        print(Board.full)
     else:
         print("Name of test not found")
