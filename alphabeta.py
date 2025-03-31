@@ -64,7 +64,7 @@ class Alpha_Beta:
 
 
     """
-    TODO: z.B. |xxox-| gibt wert für x für two in a row, kann aber nicht mehr zum gewinnen genutzt werden 
+    TODO: z.B. |x-x-x| kann nicht zum gewinnen benutzt werden wird aber trozdem positiv bewertet
     """
     def evaluate(self, board: yav.Board, defence = False, p_two_row = 2, p_one_gap = 5, p_two_gap = 11, p_four_thread = 23):
         result = board.is_end_opponent()
