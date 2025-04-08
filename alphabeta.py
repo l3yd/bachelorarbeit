@@ -23,12 +23,17 @@ class Alpha_Beta:
         self.board = board
         self.search_depth = search_depth
         self.best_move = None
-        self.checks = 0
-        self.moves = [None,None,None, None]
 
-    def alpha_beta(self):
+    def iterative_deepening(self):
+        for current_depth in range(self.search_depth):
+            self.alpha_beta(self, current_depth)
+        return 0
+
+    def alpha_beta(self, depth = -1):
+        if depth -1:
+            depth = self.search_depth
         inf = math.inf
-        self._nega_max(self.board, self.search_depth, -inf, inf)
+        self._nega_max(self.board, depth, -inf, inf)
 
         if self.best_move != None:
             new_board = self.board.simulate_move(self.best_move)[0]
@@ -49,7 +54,6 @@ class Alpha_Beta:
         max_value = alpha
         for move in board.get_possible_actions():
             new_board, result = board.simulate_move(move)
-            self.moves[depth-1] = move
             value = -(self._nega_max(new_board, depth-1, -beta, -max_value))
             if value > max_value:
                 if new_board.is_end() == -1:
@@ -59,7 +63,6 @@ class Alpha_Beta:
                     self.best_move = move
                 if max_value >= beta:
                     break
-        self.moves[depth-1] = None
         return max_value
 
 
