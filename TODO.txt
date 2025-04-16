@@ -1,0 +1,7 @@
+worked on:
+    - implemented transposition table and iterative deepening
+
+next time:
+    - check if it works
+    - integrate to mcts
+    - proof number search
