@@ -135,3 +135,17 @@ def coords_to_bit(coords):
 
 def bit_to_coords(bit):
     return (math.floor(bit / 9), bit % 9)
+
+
+thresholds = [5,15,25,35,45,54,63,72,81]
+subtrahends = [0,4, 7, 9,10,11,13,16,20]
+
+def position_to_bit(pos: int) -> int:
+    for i in range(len(thresholds)):
+        if pos < thresholds[i]:
+            return pos - subtrahends[i]
+
+def bit_to_position(bit: int) -> int:
+    for i in range(len(thresholds)):
+        if bit < thresholds[i]:
+            return bit + subtrahends[i]
