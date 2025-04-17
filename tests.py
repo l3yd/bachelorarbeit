@@ -28,7 +28,7 @@ def game(board:yav.Board, players = ["human", "human"], start = np.random.randin
             if printing:
                 announce_winner(players, turn)
             return turn
-        print(board.move_count)
+        #print(board.move_count)
 
 def find_move(players, turn, board, printing):
     player = players[turn-1]
@@ -44,6 +44,8 @@ def find_move(players, turn, board, printing):
             coords = ab.Alpha_Beta(board).alpha_beta()
         elif player == "mcts":
             coords = mcts.MCTS(board)
+        elif player == "abiter":
+            coords = ab.Alpha_Beta(board).iterative_deepening()
         else: # (randomplayer):
             actions = board.get_possible_actions()
             np.random.shuffle(actions)
@@ -165,7 +167,7 @@ def test_full_board_ab(b):
     coords = instance.alpha_beta()
     print(coords)
 
-legal_players = ["human", "minimax", "mm", "alphabeta", "ab", "mcts", "random"]
+legal_players = ["human", "minimax", "mm", "alphabeta", "ab", "mcts", "random","abiter"]
 
 if __name__ == '__main__':
     Board = yav.Board()

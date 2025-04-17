@@ -3,7 +3,7 @@ import yavalath as yav
 import math
 
 class Alpha_Beta:
-    def __init__(self, board: yav.Board, search_depth = 4):
+    def __init__(self, board: yav.Board, search_depth = 3):
         self.board = board
         self.search_depth = search_depth
         self.best_move = None
@@ -15,12 +15,15 @@ class Alpha_Beta:
         self.move_second_player = np.random.randint(2**32,dtype=np.int64)
 
     def iterative_deepening(self):
-        for current_depth in range(self.search_depth):
-            best_move = self.alpha_beta(self, current_depth)
+        best_move = None
+        for current_depth in range(self.search_depth + 1):
+            #print("depth: " + str(current_depth))
+            best_move = self.alpha_beta(current_depth) # This line causes lag at every depth
+            #print(self.best_move)
             new_board, result = self.board.simulate_move(best_move)
             hashcode = self.hash(new_board)
             self.tp_table[hashcode] = self.last_value
-        return 0
+        return best_move
     
     def hash(self, board):
         hashcode = 0
@@ -39,15 +42,17 @@ class Alpha_Beta:
         return hashcode
     
     def alpha_beta(self, depth = -1):
-        if depth -1:
+        if depth == -1:
             depth = self.search_depth
         inf = math.inf
         self.last_value = self._nega_max(self.board, depth, -inf, inf)
 
         if self.best_move != None:
+            #print("found a move")
             return self.best_move
         else:
-            print("ERROR: No best move found!")
+            #print("ERROR: No best move found!")
+            #print("played randomly")
             random_moves = self.board.get_possible_actions()
             if random_moves == []:
                 return (0,0)
@@ -66,10 +71,12 @@ class Alpha_Beta:
             new_board, result = board.simulate_move(move)
             value = -(self._nega_max(new_board, depth-1, -beta, -max_value))
             if value > max_value:
+                #print(str(depth) + " - " + str(value))
                 if new_board.is_end() == -1:
                     continue
                 max_value = value
                 if depth == self.search_depth:
+                    #print(str(self.search_depth) + "hallo")
                     self.best_move = move
                 if max_value >= beta:
                     break
