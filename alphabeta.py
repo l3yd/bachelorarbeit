@@ -109,7 +109,11 @@ def evaluate(board: yav.Board, defence = False, p_two_row = 2, p_one_gap = 5, p_
     if result != 0:
         if result == 0.5:
             return 0
-        return math.inf * result
+        score = math.inf * result
+        if debug:
+            print()
+            print(score)
+        return score
 
     if not defence:
         bitboard = board.full ^ board.current # steine des spielers der als letztes einen platziert hat

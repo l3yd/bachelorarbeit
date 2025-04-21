@@ -96,7 +96,7 @@ def _create_testboard(b,coords_current,coords_full):
     return b
 
 def testboard_0(b):
-    coords_curret = [(0,0), (0,3), (2,0),(3,0),(3,1)]
+    coords_current = [(0,0), (0,3), (2,0),(3,0),(3,1)]
     coords_full = [(0,1), (1,0),(1,1),(3,2),(4,3)]
     return _create_testboard(b,coords_current,coords_full)
 
@@ -111,8 +111,13 @@ def testboard_2(b):
     return _create_testboard(b,coords_current,coords_full)
 
 def testboard_3(b):
-    coords_current = []
-    coords_full = []
+    coords_current = [(0,0),(1,1),(1,2),(3,3)]
+    coords_full = [(0,2),(2,2),(3,2),(3,5)]
+    return _create_testboard(b,coords_current,coords_full)
+
+def testboard_4(b):
+    coords_current = [(0,0),(0,1),(1,1),(3,1),(3,3),(3,4),(3,6),(5,5),(6,6)]
+    coords_full = [(2,2),(2,3),(3,2),(3,5),(5,3),(5,4),(5,6),(7,5),(7,6),(8,6)]
     return _create_testboard(b,coords_current,coords_full)
 
 legal_players = ["human", "minimax", "mm", "alphabeta", "ab", "mcts", "random","abiter"]
@@ -184,12 +189,20 @@ if __name__ == '__main__':
         Board.print_board()
         print(Board.full)
     elif arg == "test_ab":
-        Board = testboard_3(Board)
-        #coords = ab.Alpha_Beta(Board).alpha_beta()
+        Board = testboard_4(Board)
+
+        correct_board = Board.simulate_move((2,1))[0]
+        correct_board.print_board()
+
+        coords = ab.Alpha_Beta(Board).alpha_beta()
+        new_board = Board.simulate_move(coords)[0]
+        new_board.print_board()
         coords = ab.Alpha_Beta(Board).iterative_deepening()
         Board.do_move(coords)
         Board.print_board()
 
-        #ab.evaluate(Board,debug=True)
+        ab.evaluate(correct_board,debug=True)
+        ab.evaluate(new_board,debug=True)
+        ab.evaluate(Board,debug=True)
     else:
         print("Name of test not found")
