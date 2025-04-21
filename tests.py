@@ -78,88 +78,6 @@ def mcts_states(b: yav.Board):
     mcts.MCTS(b)
     b.print_board()
 
-def eval_ab(board: yav.Board):
-    board.full = int("1111",2)
-    board.current = int("100",2)
-    board.print_board()
-    instance = ab.Alpha_Beta(board)
-    print(instance.evaluate(board))
-
-def create_test_board(b):
-    coords = [(2,6), (3,0), (3,2), (3,3), (6,3)]
-    for i in range(len(coords)):
-        b.full |= (1<<yav.coords_to_bit(coords[i]))
-    coords = [(1,1), (4,0), (4,7), (5,8)]
-    for i in range(len(coords)):
-        b.current |= (1<<yav.coords_to_bit(coords[i]))
-    b.full |= b.current
-    b.move_count = 9
-    b.print_board()
-    return b
-
-def one_position_minimax(b):
-    coords = mm.MiniMax(b).main()
-    b.do_move(coords)
-    b.print_board()
-
-def create_another_test_board(b):
-    coords = [(0,1), (1,1), (3,1)]
-    for i in range(len(coords)):
-        b.full |= (1<<yav.coords_to_bit(coords[i]))
-    coords = [(0,0), (0,2), (0,3)]
-    for i in range(len(coords)):
-        b.current |= (1<<yav.coords_to_bit(coords[i]))
-    b.full |= b.current
-    b.move_count = 6
-    b.print_board()
-    return b
-
-def test_is_end(b):
-    b.full |= (1<< yav.coords_to_bit((2,1)))
-    b.current |= (1<< yav.coords_to_bit((1,0)))
-    test_coord = (4,0)
-    b.current |= (1<< yav.coords_to_bit(test_coord))
-    b.full |= b.current
-    b.move_count += 3
-    b.print_board()
-    print(b.is_end())
-    print(b.is_end_opponent())
-
-def create_test_board_ab(b):
-    coords = [(1,4), (4,6), (5,4), (8,4), (8,5), (8,7)]
-    for i in range(len(coords)):
-        b.full |= (1<<yav.coords_to_bit(coords[i]))
-    coords = [(0,0), (0,4), (1,2), (2,1), (2,5), (4,0)]
-    for i in range(len(coords)):
-        b.current |= (1<<yav.coords_to_bit(coords[i]))
-    b.full |= b.current
-    b.move_count = 12
-    b.print_board()
-    return b
-
-def one_position_ab(b):
-    ab = ab.Alpha_Beta(b)
-    coords = ab.alpha_beta()
-    correct_board = b.simulate_move((2,0))[0].simulate_move((0,1))[0].simulate_move((0,2))[0].simulate_move((0,3))[0]
-    b.do_move(coords)
-    b.print_board()
-    
-    print(ab.evaluate(b))
-    print(ab.evaluate(correct_board))
-    
-
-def create_another_test_board_ab(b):
-    coords = [(2,1), (3,3), (8,5)]
-    for i in range(len(coords)):
-        b.full |= (1<<yav.coords_to_bit(coords[i]))
-    coords = [(0,0), (1,0), (3,0)]
-    for i in range(len(coords)):
-        b.current |= (1<<yav.coords_to_bit(coords[i]))
-    b.full |= b.current
-    b.move_count = 6
-    b.print_board()
-    return b
-
 def test_full_board_ab(b):
     b.full = int("101100000111111000111111100111111110111111111011111111001111111000111111000011111", 2)
     b.move_count = 61
@@ -167,41 +85,35 @@ def test_full_board_ab(b):
     coords = instance.alpha_beta()
     print(coords)
 
-def create_testboard_0(b):
-    coords = [(0,0), (0,3), (2,0),(3,0),(3,1)]
-    for i in range(len(coords)):
-        b.current |= (1<<yav.coords_to_bit(coords[i]))
-    coords = [(0,1), (1,0),(1,1),(3,2),(4,3)]
-    for i in range(len(coords)):
-        b.full |= (1<<yav.coords_to_bit(coords[i]))
+def _create_testboard(b,coords_current,coords_full):
+    for i in range(len(coords_current)):
+        b.current |= (1<<yav.coords_to_bit(coords_current[i]))
+    for i in range(len(coords_full)):
+        b.full |= (1<<yav.coords_to_bit(coords_full[i]))
     b.full |= b.current
-    b.move_count = 6
+    b.move_count = len(coords_current) +  len(coords_full)
     b.print_board()
     return b
 
-def create_testboard_1(b):
-    coords = [(0,0), (1,0), (3,0),(4,0),(3,2),(4,3),(4,4),(4,6),(5,6),(6,5)]
-    for i in range(len(coords)):
-        b.current |= (1<<yav.coords_to_bit(coords[i]))
-    coords = [(2,0),(2,1),(3,3),(3,5),(2,5),(5,5),(5,4),(5,7),(6,3),(6,6)]
-    for i in range(len(coords)):
-        b.full |= (1<<yav.coords_to_bit(coords[i]))
-    b.full |= b.current
-    b.move_count = 6
-    b.print_board()
-    return b
+def testboard_0(b):
+    coords_curret = [(0,0), (0,3), (2,0),(3,0),(3,1)]
+    coords_full = [(0,1), (1,0),(1,1),(3,2),(4,3)]
+    return _create_testboard(b,coords_current,coords_full)
 
-def create_testboard_2(b):
-    coords = [(0,0),(3,3)]
-    for i in range(len(coords)):
-        b.current |= (1<<yav.coords_to_bit(coords[i]))
-    coords = [(2,2),(2,3)]
-    for i in range(len(coords)):
-        b.full |= (1<<yav.coords_to_bit(coords[i]))
-    b.full |= b.current
-    b.move_count = 6
-    b.print_board()
-    return b
+def testboard_1(b):
+    coords_current = [(0,0), (1,0), (3,0),(4,0),(3,2),(4,3),(4,4),(4,6),(5,6),(6,5)]
+    coords_full = [(2,0),(2,1),(3,3),(3,5),(2,5),(5,5),(5,4),(5,7),(6,3),(6,6)]
+    return _create_testboard(b,coords_current,coords_full)
+
+def testboard_2(b):
+    coords_current = [(0,0),(3,3)]
+    coords_full = [(2,2),(2,3)]
+    return _create_testboard(b,coords_current,coords_full)
+
+def testboard_3(b):
+    coords_current = []
+    coords_full = []
+    return _create_testboard(b,coords_current,coords_full)
 
 legal_players = ["human", "minimax", "mm", "alphabeta", "ab", "mcts", "random","abiter"]
 
@@ -241,26 +153,9 @@ if __name__ == '__main__':
         basic_test(Board)
     elif arg == "mcts_states":
         mcts_states(Board)
-    elif arg == "eval_ab":
-        eval_ab(Board)
-    elif arg == "one_position_minimax":
-        Board = create_test_board(Board)
-        one_position_minimax(Board)
-    elif arg == "another_position_minimax":
-        Board = create_another_test_board(Board)
-        one_position_minimax(Board)
-    elif arg == "is_end":
-        Board = create_another_test_board(Board)
-        test_is_end(Board)
-    elif arg == "one_position_ab":
-        Board = create_test_board_ab(Board)
-        one_position_ab(Board)
-    elif arg == "another_position_ab":
-        Board = create_another_test_board_ab(Board)
-        one_position_ab(Board)
     elif arg == "test_full_board":
         test_full_board_ab(Board)
-    elif arg == "ab_borders":
+    elif arg == "test_ab_borders":
         coords = [(2,6),(4,8)]
         coords_current = [(1,5)]
 
@@ -275,21 +170,21 @@ if __name__ == '__main__':
         Board.print_board()
         albe = ab.Alpha_Beta(Board)
         print(albe.evaluate(Board))
-    elif arg == "generation":
+    elif arg == "generation": # generation der bitbords für die borderüberprüfung
         coords = [(0,3),(1,4),(2,5),(3,6),(4,7),(6,7),(7,7),(8,7),(5,7)]
         for x in coords:
             bit = yav.coords_to_bit(x)
             Board.full |= (1 << bit)
         Board.print_board()
         print(Board.full)
-    elif arg == "zusammen":
+    elif arg == "zusammen": # addieren der oben generierten bitboards
         n1 = 302822905891722765537284
         n2 = 605645811783445531074568
         Board.full = n1 + n2
         Board.print_board()
         print(Board.full)
     elif arg == "test_ab":
-        Board = create_testboard_2(Board)
+        Board = testboard_3(Board)
         #coords = ab.Alpha_Beta(Board).alpha_beta()
         coords = ab.Alpha_Beta(Board).iterative_deepening()
         Board.do_move(coords)
