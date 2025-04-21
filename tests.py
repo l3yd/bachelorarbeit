@@ -167,6 +167,42 @@ def test_full_board_ab(b):
     coords = instance.alpha_beta()
     print(coords)
 
+def create_testboard_0(b):
+    coords = [(0,0), (0,3), (2,0),(3,0),(3,1)]
+    for i in range(len(coords)):
+        b.current |= (1<<yav.coords_to_bit(coords[i]))
+    coords = [(0,1), (1,0),(1,1),(3,2),(4,3)]
+    for i in range(len(coords)):
+        b.full |= (1<<yav.coords_to_bit(coords[i]))
+    b.full |= b.current
+    b.move_count = 6
+    b.print_board()
+    return b
+
+def create_testboard_1(b):
+    coords = [(0,0), (1,0), (3,0),(4,0),(3,2),(4,3),(4,4),(4,6),(5,6),(6,5)]
+    for i in range(len(coords)):
+        b.current |= (1<<yav.coords_to_bit(coords[i]))
+    coords = [(2,0),(2,1),(3,3),(3,5),(2,5),(5,5),(5,4),(5,7),(6,3),(6,6)]
+    for i in range(len(coords)):
+        b.full |= (1<<yav.coords_to_bit(coords[i]))
+    b.full |= b.current
+    b.move_count = 6
+    b.print_board()
+    return b
+
+def create_testboard_2(b):
+    coords = [(0,0),(3,3)]
+    for i in range(len(coords)):
+        b.current |= (1<<yav.coords_to_bit(coords[i]))
+    coords = [(2,2),(2,3)]
+    for i in range(len(coords)):
+        b.full |= (1<<yav.coords_to_bit(coords[i]))
+    b.full |= b.current
+    b.move_count = 6
+    b.print_board()
+    return b
+
 legal_players = ["human", "minimax", "mm", "alphabeta", "ab", "mcts", "random","abiter"]
 
 if __name__ == '__main__':
@@ -252,5 +288,13 @@ if __name__ == '__main__':
         Board.full = n1 + n2
         Board.print_board()
         print(Board.full)
+    elif arg == "test_ab":
+        Board = create_testboard_2(Board)
+        #coords = ab.Alpha_Beta(Board).alpha_beta()
+        coords = ab.Alpha_Beta(Board).iterative_deepening()
+        Board.do_move(coords)
+        Board.print_board()
+
+        #ab.evaluate(Board,debug=True)
     else:
         print("Name of test not found")

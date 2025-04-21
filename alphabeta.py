@@ -3,7 +3,7 @@ import yavalath as yav
 import math
 
 class Alpha_Beta:
-    def __init__(self, board: yav.Board, search_depth = 3):
+    def __init__(self, board: yav.Board, search_depth = 4):
         self.board = board
         self.search_depth = search_depth
         self.best_move = None
@@ -71,12 +71,10 @@ class Alpha_Beta:
             new_board, result = board.simulate_move(move)
             value = -(self._nega_max(new_board, depth-1, -beta, -max_value))
             if value > max_value:
-                #print(str(depth) + " - " + str(value))
                 if new_board.is_end() == -1:
                     continue
                 max_value = value
                 if depth == self.search_depth:
-                    #print(str(self.search_depth) + "hallo")
                     self.best_move = move
                 if max_value >= beta:
                     break
@@ -106,7 +104,7 @@ bb_tb_right_one_gap = 2236041621642674176
 """
 TODO: z.B. |x-x-x| kann nicht zum gewinnen benutzt werden wird aber trozdem positiv bewertet
 """
-def evaluate(board: yav.Board, defence = False, p_two_row = 2, p_one_gap = 5, p_two_gap = 11, p_four_thread = 23):
+def evaluate(board: yav.Board, defence = False, p_two_row = 2, p_one_gap = 5, p_two_gap = 11, p_four_thread = 23, debug=False):
     result = board.is_end_opponent()
     if result != 0:
         if result == 0.5:
@@ -149,8 +147,6 @@ def evaluate(board: yav.Board, defence = False, p_two_row = 2, p_one_gap = 5, p_
     ver_blocked = ver_one_gap & (opponent >> 1)
     diag_bt_blocked = diag_bt_one_gap & (opponent >> 9)
     diag_tb_blocked = diag_tb_one_gap & (opponent >> 10)
-    n_one_gap_blocked = ver_blocked.bit_count() + diag_bt_blocked.bit_count() + diag_tb_blocked.bit_count()
-    n_one_gap -= n_one_gap_blocked
         #checking if there is space to finish the game with this row
     ver_right = ver_one_gap & (bb_ver_right_one_gap | (board.full >> 3))
     ver_left = ver_one_gap & (bb_ver_left_one_gap | (board.full << 1))
@@ -172,7 +168,7 @@ def evaluate(board: yav.Board, defence = False, p_two_row = 2, p_one_gap = 5, p_
         #accounting for enemy
     ver_blocked = (ver_two_gap & (opponent >> 1)) | (ver_two_gap & (opponent >> 2))
     diag_bt_blocked = (diag_bt_two_gap & (opponent >> 9)) | (diag_bt_two_gap & (opponent >> 18))
-    diag_tb_blocked = (diag_tb_two_gap & (opponent >> 10)) | (diag_bt_two_gap & (opponent >> 20))
+    diag_tb_blocked = (diag_tb_two_gap & (opponent >> 10)) | (diag_tb_two_gap & (opponent >> 20))
     n_two_gap_blocked = ver_blocked.bit_count() + diag_bt_blocked.bit_count() + diag_tb_blocked.bit_count()
     n_two_gap -= n_two_gap_blocked
 
@@ -183,10 +179,9 @@ def evaluate(board: yav.Board, defence = False, p_two_row = 2, p_one_gap = 5, p_
     n_four_thread = ver.bit_count() + diag_bottom_top.bit_count() + diag_top_bottom.bit_count()
         #accounting for enemy
     ver_blocked = ver & (opponent >> 1)
-    diag_bt_blocked = diag_bottom_top & (opponent >> 9)
-    diag_tb_blocked = diag_top_bottom & (opponent >> 10)
+    diag_bt_blocked = diag_bottom_top & (opponent >> 18)
+    diag_tb_blocked = diag_top_bottom & (opponent >> 20)
     n_four_thred_blocked = ver_blocked.bit_count() + diag_bt_blocked.bit_count() + diag_tb_blocked.bit_count()
-    
 
     # four_thread_2 = int("1011",2)
     ver = ver_two_row & ver_two_gap
@@ -195,14 +190,24 @@ def evaluate(board: yav.Board, defence = False, p_two_row = 2, p_one_gap = 5, p_
     n_four_thread += ver.bit_count() + diag_bottom_top.bit_count() + diag_top_bottom.bit_count()
         #accounting for enemy
     ver_blocked = ver & (opponent >> 2)
-    diag_bt_blocked = diag_bottom_top & (opponent >> 18)
-    diag_tb_blocked = diag_top_bottom & (opponent >> 20)
+    diag_bt_blocked = diag_bottom_top & (opponent >> 9)
+    diag_tb_blocked = diag_top_bottom & (opponent >> 10)
     n_four_thred_blocked += ver_blocked.bit_count() + diag_bt_blocked.bit_count() + diag_tb_blocked.bit_count()
 
     n_four_thread -= n_four_thred_blocked
     
     score = (n_two_row * p_two_row) + (n_one_gap * p_one_gap) + (n_two_gap * p_two_gap) + (n_four_thread * p_four_thread)
+    if debug:
+        print()
+        print("individual scores:")
+        print((n_two_row * p_two_row))
+        print(n_one_gap * p_one_gap)
+        print(n_two_gap * p_two_gap)
+        print((n_four_thread * p_four_thread))
+        print("---")
+        print(score)
+
     if defence:
         return score
     else:
-        return score - evaluate(board, True)
+        return score - evaluate(board, defence=True, debug=False)
