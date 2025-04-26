@@ -13,23 +13,30 @@ class MCTNode:
         self.a = None
         self.parent = parent
 
-def MCTS(board: yav.Board):
+def MCTS(board: yav.Board, c = np.sqrt(2)):
     root = MCTNode(board)
-    for i in range(2000):
-        v = _selection(root)
+    for i in range(10000):
+        v = _selection(root, c)
         reward = _simulation(v.state)
         _backpropagation_negamax(v, reward)
+    A = np.zeros(len(root.child_nodes))
+    for i in range(len(root.child_nodes)):
+        child = root.child_nodes[i]
+        print(str(child.a) + ": " + str(child.q) + "| " + str(child.n))
+        A[i] = child.q
+    #return root.child_nodes[np.argmax(A)].a
     return _UCT(root, 0).a
 
-def _selection(node: MCTNode) -> MCTNode:
+def _selection(node: MCTNode, c) -> MCTNode:
     while node.state.is_end() == 0:
         if len(node.actions) > 0:
             return _expansion(node)
         else:
-            node = _UCT(node)
+            node = _UCT(node, c)
     return node
 
 def _expansion(node: MCTNode) -> MCTNode:
+    np.random.shuffle(node.actions)
     a = node.actions.pop()
     child_state, result = node.state.simulate_move(a)
     child = MCTNode(child_state, node)
@@ -37,7 +44,7 @@ def _expansion(node: MCTNode) -> MCTNode:
     node.child_nodes.append(child)
     return child
 
-def _UCT(node: MCTNode, c = 0.8) -> MCTNode:
+def _UCT(node: MCTNode, c) -> MCTNode:
     num_children = len(node.child_nodes)
     values = np.zeros(num_children)
     for i in range(num_children):
@@ -49,7 +56,7 @@ def _simulation(state: yav.Board) -> int:
     while result == 0:
         actions = state.get_possible_actions()
         state, result = state.simulate_move(actions[np.random.randint(0, len(actions))])
-    return result * (61 - state.move_count)
+    return result #* (61 - state.move_count)
 
 def _backpropagation_negamax(node: MCTNode, reward):
     while node is not None:
