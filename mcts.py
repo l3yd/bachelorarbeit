@@ -19,21 +19,12 @@ def MCTS(board: yav.Board, c = np.sqrt(2)):
         v = _selection(root, c)
         reward = _simulation(v.state)
         _backpropagation_negamax(v, reward)
-    A = np.zeros(len(root.child_nodes))
-    for i in range(len(root.child_nodes)):
-        child = root.child_nodes[i]
-        print(str(child.a) + ": " + str(child.q) + "| " + str(child.n))
-        A[i] = child.q
-    #return root.child_nodes[np.argmax(A)].a
     return _UCT(root, 0).a
 
 def _selection(node: MCTNode, c) -> MCTNode:
-    while node.state.is_end() == 0:
-        if len(node.actions) > 0:
-            return _expansion(node)
-        else:
-            node = _UCT(node, c)
-    return node
+    while len(node.actions) == 0:
+        node = _UCT(node, c)
+    return _expansion(node)
 
 def _expansion(node: MCTNode) -> MCTNode:
     np.random.shuffle(node.actions)
@@ -52,11 +43,14 @@ def _UCT(node: MCTNode, c) -> MCTNode:
     return node.child_nodes[np.argmax(values)]
 
 def _simulation(state: yav.Board) -> int:
+    player = state.move_count % 2
     result = state.is_end()
     while result == 0:
         actions = state.get_possible_actions()
         state, result = state.simulate_move(actions[np.random.randint(0, len(actions))])
-    return result #* (61 - state.move_count)
+    if state.move_count % 2 != player:
+        result = -result
+    return result
 
 def _backpropagation_negamax(node: MCTNode, reward):
     while node is not None:
