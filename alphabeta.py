@@ -13,7 +13,7 @@ class Alpha_Beta:
         self.current_board = board
         self.tp_table = {}
         #pseudorandom numbers for zobrist hashing
-        self.table = np.random.randint(2**32-1,size=(61,2),dtype=np.int64)
+        self.table = np.random.randint(2**32-1,size=(81,2),dtype=np.int64)
         self.move_second_player = np.random.randint(2**32,dtype=np.int64)
 
         # for keeping track of moves leading to a sudden death
@@ -35,8 +35,9 @@ class Alpha_Beta:
         if player:
             hashcode ^= self.move_second_player
         
-        for pos in range(61):
-            bit = yav.position_to_bit(pos)
+        for pos in range(81):
+            #bit = yav.position_to_bit(pos) ### algorithm spend most of the time here (probably to order?)
+            bit = pos
             if board.full & (1 << bit) != 0:
                 if board.current & (1 << bit) != 0:
                     belongs_to = player
@@ -83,7 +84,7 @@ class Alpha_Beta:
             if depth == self.search_depth:
                 if end == -1:
                     self.death_moves.append(move)
-        
+
             if value > max_value:
                 if new_board.is_end() == -1:
                     continue

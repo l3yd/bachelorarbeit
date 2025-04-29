@@ -38,6 +38,7 @@ def game(board:yav.Board, players = ["human", "human"], start = np.random.randin
 
 def find_move(players, turn, board, printing, c):
     player = players[turn-1]
+    print(player)
     if player == "human":
         move = input("Player " + str(turn) + ", please provide a move: ")
         coords = move.split()
