@@ -1,6 +1,7 @@
 import numpy as np
 import yavalath as yav
-import math
+import alphabeta as ab
+import time
 
 
 class MCTNode:
@@ -12,14 +13,34 @@ class MCTNode:
         self.actions = board.get_possible_actions()
         self.a = None
         self.parent = parent
+        # keeping track of moves leading to sudden death (in root node)
+        self.death_moves = []
 
-def MCTS(board: yav.Board, c = np.sqrt(2)):
+def MCTS_alphabeta(board: yav.Board, c = np.sqrt(2), k = 4, max_time = 1):
     root = MCTNode(board)
-    for i in range(10000):
-        v = _selection(root, c)
-        reward = _simulation(v.state)
-        _backpropagation_negamax(v, reward)
+    start_time = time.time()
+    while time.time() - start_time < max_time:
+        steps_from_root = _MCTS_one_iteration(root, c)
+        if steps_from_root > k and root.death_moves == []:
+            AB = ab.Alpha_Beta(board,k)
+            move, sudden_end = AB.iterative_deepening()
+            if sudden_end == 1:
+                return move
+            elif sudden_end == -1:
+                root.death_moves = AB.death_moves
     return _UCT(root, 0).a
+
+def MCTS(board: yav.Board, c = np.sqrt(2), max_time = 1):
+    root = MCTNode(board)
+    start_time = time.time()
+    while time.time() - start_time < max_time:
+        _MCTS_one_iteration(root, c)
+    return _UCT(root, 0).a
+
+def _MCTS_one_iteration(root: MCTNode, c) -> int:
+    v = _selection(root, c)
+    reward = _simulation(v.state)
+    return _backpropagation_negamax(v, reward)
 
 def _selection(node: MCTNode, c) -> MCTNode:
     while len(node.actions) == 0:
@@ -38,9 +59,12 @@ def _expansion(node: MCTNode) -> MCTNode:
 def _UCT(node: MCTNode, c) -> MCTNode:
     num_children = len(node.child_nodes)
     values = np.zeros(num_children)
+    children = node.child_nodes
+    if node.death_moves != []:
+        children = list(set(children) - set(node.death_moves))
     for i in range(num_children):
-        values[i] = (node.child_nodes[i].q/node.child_nodes[i].n) + c * np.sqrt(2*np.log(node.n)/node.child_nodes[i].n)
-    return node.child_nodes[np.argmax(values)]
+        values[i] = (children[i].q/children[i].n) + c * np.sqrt(2*np.log(node.n)/children[i].n)
+    return children[np.argmax(values)]
 
 def _simulation(state: yav.Board) -> int:
     player = state.move_count % 2
@@ -52,9 +76,13 @@ def _simulation(state: yav.Board) -> int:
         result = -result
     return result
 
-def _backpropagation_negamax(node: MCTNode, reward):
+def _backpropagation_negamax(node: MCTNode, reward) -> int:
+    steps = 0
     while node is not None:
         node.n += 1
         node.q += reward
         reward = -reward
         node = node.parent
+
+        steps += 1
+    return steps

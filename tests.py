@@ -50,11 +50,13 @@ def find_move(players, turn, board, printing, c):
         if player == "minimax":
             coords = mm.MiniMax(board).main()
         elif player == "alphabeta":
-            coords = ab.Alpha_Beta(board).alpha_beta()
+            coords, sudden_end = ab.Alpha_Beta(board).alpha_beta()
         elif player == "mcts":
             coords = mcts.MCTS(board, c)
         elif player == "abiter":
-            coords = ab.Alpha_Beta(board).iterative_deepening()
+            coords, sudden_end = ab.Alpha_Beta(board).iterative_deepening()
+        elif player == "mcts_ab":
+            coords = mcts.MCTS_alphabeta(board)
         else: # (randomplayer):
             actions = board.get_possible_actions()
             np.random.shuffle(actions)
@@ -67,7 +69,7 @@ def announce_winner(players, turn, C):
         print("Player " + str(turn) + " wins!")
     else:
         if player == "mcts":
-            print(str(player) + "(" + str(turn) + " | c=" + str(C[turn-1]) + ")'s turn")
+            print(str(player) + "(" + str(turn) + " | c=" + str(C[turn-1]) + ")'s wins!")
         else:
             print(str(player) + "(" + str(turn) + ") wins!")
 
@@ -142,7 +144,7 @@ def testboard_4(b):
     coords_full = [(2,2),(2,3),(3,2),(3,5),(5,3),(5,4),(5,6),(7,5),(7,6),(8,6)]
     return _create_testboard(b,coords_current,coords_full)
 
-legal_players = ["human", "minimax", "mm", "alphabeta", "ab", "mcts", "random","abiter"]
+legal_players = ["human", "minimax", "mm", "alphabeta", "ab", "mcts", "random","abiter","mcts_ab"]
 
 if __name__ == '__main__':
     Board = yav.Board()
@@ -172,7 +174,7 @@ if __name__ == '__main__':
             for i in range(n_iterations):
                 winner = game(Board, players, printing=False)
                 wins[winner-1] += 1
-                print("Game " + str(i+1) + " (of " + str(n_iterations) + ") is over.")
+                print("Game " + str(i+1) + " (of " + str(n_iterations) + ") is over." + str(players[0]) + " won " + str(wins[0]) + " | " + str(players[1]) + " won " + str(wins[1]))
             print(str(players[0]) + " won " + str(wins[0]) + " | " + str(players[1]) + " won " + str(wins[1]))
             winrate = (max(wins)/n_iterations) * 100
             print(str(winrate) + "%")

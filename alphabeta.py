@@ -9,23 +9,27 @@ class Alpha_Beta:
         self.best_move = None
         self.last_value = 0
 
+        self.run_iter_deepening = False
+        self.current_board = board
         self.tp_table = {}
         #pseudorandom numbers for zobrist hashing
         self.table = np.random.randint(2**32-1,size=(61,2),dtype=np.int64)
         self.move_second_player = np.random.randint(2**32,dtype=np.int64)
 
+        # for keeping track of moves leading to a sudden death
+        self.death_moves = []
+
     def iterative_deepening(self):
+        self.run_iter_deepening = True
         best_move = None
         for current_depth in range(self.search_depth + 1):
-            #print("depth: " + str(current_depth))
-            best_move = self.alpha_beta(current_depth) # This line causes lag at every depth
-            #print(self.best_move)
+            best_move, sudden_end = self.alpha_beta(current_depth)
             new_board, result = self.board.simulate_move(best_move)
-            hashcode = self.hash(new_board)
+            hashcode = self._hash(new_board)
             self.tp_table[hashcode] = self.last_value
-        return best_move
+        return best_move, sudden_end
     
-    def hash(self, board):
+    def _hash(self, board: yav.Board):
         hashcode = 0
         player = board.move_count % 2
         if player:
@@ -45,31 +49,41 @@ class Alpha_Beta:
         if depth == -1:
             depth = self.search_depth
         inf = math.inf
-        self.last_value = self._nega_max(self.board, depth, -inf, inf)
+        self.last_value, sudden_end = self._nega_max(self.board, depth, -inf, inf)
 
         if self.best_move != None:
-            #print("found a move")
-            return self.best_move
+            return self.best_move, sudden_end
         else:
-            #print("ERROR: No best move found!")
-            #print("played randomly")
             random_moves = self.board.get_possible_actions()
             if random_moves == []:
-                return (0,0)
+                return (0,0), 0
             np.random.shuffle(random_moves)
-            return random_moves[0]
+            return random_moves[0], 0
 
 
     def _nega_max(self, board: yav.Board, depth, alpha, beta):
         if depth == 0 or board.move_count == 61:
-            return -evaluate(board)
+            return -evaluate(board), board.is_end_opponent() * (-1 if self.search_depth % 2 == 1 else 1)
         
         max_value = alpha
+        sudden_end = 0
+
         moves = board.get_possible_actions()
-        moves.sort(key=self.order)
+        if self.run_iter_deepening:
+            self.current_board = board
+            moves.sort(key=self._order)
+
         for move in moves:
             new_board, result = board.simulate_move(move)
-            value = -(self._nega_max(new_board, depth-1, -beta, -max_value))
+            value, end = self._nega_max(new_board, depth-1, -beta, -max_value)
+            value = -value
+
+            if (depth % 2 == 0 and end > sudden_end) or (depth % 2 == 1 and end < sudden_end):
+                sudden_end = end
+            if depth == self.search_depth:
+                if end == -1:
+                    self.death_moves.append(move)
+        
             if value > max_value:
                 if new_board.is_end() == -1:
                     continue
@@ -78,10 +92,12 @@ class Alpha_Beta:
                     self.best_move = move
                 if max_value >= beta:
                     break
-        return max_value
+        
+        return max_value, sudden_end
     
-    def order(self, e):
-        return self.tp_table.get(hash(e),0)
+    def _order(self, e):
+        board, result = self.current_board.simulate_move(e)
+        return self.tp_table.get(self._hash(board),0)
 
 
 
