@@ -38,7 +38,6 @@ def game(board:yav.Board, players = ["human", "human"], start = np.random.randin
 
 def find_move(players, turn, board, printing, c):
     player = players[turn-1]
-    print(player)
     if player == "human":
         move = input("Player " + str(turn) + ", please provide a move: ")
         coords = move.split()
@@ -58,6 +57,8 @@ def find_move(players, turn, board, printing, c):
             coords, sudden_end = ab.Alpha_Beta(board).iterative_deepening()
         elif player == "mcts_ab":
             coords = mcts.MCTS_alphabeta(board)
+        elif player == "mcts_pn":
+            coords = mcts.MCTS_PN(board)
         else: # (randomplayer):
             actions = board.get_possible_actions()
             np.random.shuffle(actions)
@@ -145,7 +146,7 @@ def testboard_4(b):
     coords_full = [(2,2),(2,3),(3,2),(3,5),(5,3),(5,4),(5,6),(7,5),(7,6),(8,6)]
     return _create_testboard(b,coords_current,coords_full)
 
-legal_players = ["human", "minimax", "mm", "alphabeta", "ab", "mcts", "random","abiter","mcts_ab"]
+legal_players = ["human", "minimax", "mm", "alphabeta", "ab", "mcts", "random","abiter","mcts_ab", "mcts_pn"]
 
 if __name__ == '__main__':
     Board = yav.Board()
