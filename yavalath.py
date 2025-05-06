@@ -5,6 +5,7 @@ class Board:
         self.current = current
         self.full = full
         self.move_count = move_count
+        self.is_over = False
         self.illegalMoves = [5,6,7,8,
                             15,16,17,
                             25,26,
@@ -74,7 +75,10 @@ class Board:
         self.current ^= self.full
         self.full |= (1<<bit)
         self.move_count += 1
-        return self.is_end()
+        result = self.is_end()
+        if result is not 0:
+            self.is_over = True
+        return result
     
     def simulate_move(self, coords):
         new_board = Board(self.current, self.full, self.move_count)
