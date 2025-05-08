@@ -3,8 +3,16 @@ import yavalath as yav
 import math
 import time
 
+class TTNode:
+    def __init__(self, depth, value, node_type, best_move, sudden_end):
+        self.depth = depth
+        self.value = value
+        self.node_type = node_type
+        self.best_move = best_move
+        self.sudden_end = sudden_end
+
 class Alpha_Beta:
-    def __init__(self, board: yav.Board, search_depth = 5):
+    def __init__(self, board: yav.Board, search_depth = 5): #max search depth = 5 (6 took over 8 minutes)
         self.board = board
         self.search_depth = search_depth
         self.best_move = None
@@ -12,7 +20,7 @@ class Alpha_Beta:
 
         self.run_iter_deepening = False
         self.current_board = board
-        self.tp_table = {}
+        self.tp_table: dict[int, TTNode] = {}
         #pseudorandom numbers for zobrist hashing
         self.table = np.random.randint(2**32-1,size=(81,2),dtype=np.int64)
         self.move_second_player = np.random.randint(2**32,dtype=np.int64)
@@ -28,10 +36,10 @@ class Alpha_Beta:
         for current_depth in depths:
             self.search_depth = current_depth
             best_move, sudden_end = self.alpha_beta(current_depth)
-            new_board, result = self.board.simulate_move(best_move)
+            """new_board, result = self.board.simulate_move(best_move)
             hashcode = self._hash(new_board)
-            self.tp_table[hashcode] = self.last_value
-        #print("Zeit all Iterations: " + str(time.time()-start_time))
+            self.tp_table[hashcode] = self.last_value"""
+        print("Zeit all Iterations: " + str(time.time()-start_time))
         return best_move, sudden_end
     
     def _hash(self, board: yav.Board):
@@ -58,9 +66,9 @@ class Alpha_Beta:
             depth = self.search_depth
         inf = math.inf
         start_time = time.time()
-        #print("")
+        print("")
         self.last_value, sudden_end = self._nega_max(self.board, depth, -inf, inf)
-        #print("Zeit: " + str(time.time()-start_time))
+        print("Zeit: " + str(time.time()-start_time))
         if self.best_move != None:
             return self.best_move, sudden_end
         else:
@@ -72,6 +80,17 @@ class Alpha_Beta:
 
 
     def _nega_max(self, board: yav.Board, depth, alpha, beta):
+        hash = self._hash(board)
+        if hash in self.tp_table:
+            node = self.tp_table[hash]
+            if node.depth >= depth:
+                if node.node_type == "EXACT":
+                    return node.value, node.sudden_end
+                elif node.node_type == "LOWER" and node.value >= beta:
+                    return node.value, node.sudden_end
+                elif node.node_type == "UPPER" and node.value < alpha:
+                    return node.value, node.sudden_end
+
         if depth == 0 or board.is_over:
             return -evaluate(board), board.is_end_opponent() * (-1 if self.search_depth % 2 == 1 else 1)
         
@@ -100,6 +119,14 @@ class Alpha_Beta:
                 if max_value >= beta:
                     break
         
+        if value >= beta:
+            node_type = "LOWER"
+        elif value <= alpha:
+            node_type = "UPPER"
+        else:
+            node_type = "EXACT"
+
+        self.tp_table[hash] = TTNode(depth, value, node_type, self.best_move, sudden_end)
         return max_value, sudden_end
     
     def _order(self, e):
