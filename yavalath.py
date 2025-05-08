@@ -67,7 +67,7 @@ class Board:
                 result = -result
         return result
 
-    def do_move(self, coords) -> int:
+    def do_move(self, coords: tuple[int,int]) -> int:
         """
         returns result of is_end after given move
         """
@@ -81,7 +81,7 @@ class Board:
             self.is_over = True
         return result
     
-    def simulate_move(self, coords):
+    def simulate_move(self, coords: tuple[int,int]) -> tuple['Board', int]:
         new_board = Board(self.current, self.full, self.move_count)
         result = new_board.do_move(coords)
         return new_board, result
@@ -92,7 +92,7 @@ class Board:
         return board & ~(1 << bit)
     """
 
-    def get_possible_actions(self) -> list:
+    def get_possible_actions(self) -> list[tuple[int,int]]:
         moves = []
         for i in range(81):
             if i in self.illegalMoves:
@@ -134,11 +134,11 @@ class Board:
             print("")
 
 
-def coords_to_bit(coords):
+def coords_to_bit(coords: tuple[int, int]) -> int:
     row, col = coords
     return row*9 + col
 
-def bit_to_coords(bit):
+def bit_to_coords(bit: int) -> tuple[int, int]:
     return (math.floor(bit / 9), bit % 9)
 
 
