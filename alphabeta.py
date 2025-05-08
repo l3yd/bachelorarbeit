@@ -1,9 +1,10 @@
 import numpy as np
 import yavalath as yav
 import math
+import time
 
 class Alpha_Beta:
-    def __init__(self, board: yav.Board, search_depth = 4):
+    def __init__(self, board: yav.Board, search_depth = 5):
         self.board = board
         self.search_depth = search_depth
         self.best_move = None
@@ -20,13 +21,17 @@ class Alpha_Beta:
         self.death_moves = []
 
     def iterative_deepening(self):
+        start_time = time.time()
         self.run_iter_deepening = True
         best_move = None
-        for current_depth in range(self.search_depth + 1):
+        depths = range(1, self.search_depth+1)
+        for current_depth in depths:
+            self.search_depth = current_depth
             best_move, sudden_end = self.alpha_beta(current_depth)
             new_board, result = self.board.simulate_move(best_move)
             hashcode = self._hash(new_board)
             self.tp_table[hashcode] = self.last_value
+        #print("Zeit all Iterations: " + str(time.time()-start_time))
         return best_move, sudden_end
     
     def _hash(self, board: yav.Board):
@@ -36,7 +41,7 @@ class Alpha_Beta:
             hashcode ^= self.move_second_player
         
         for pos in range(81):
-            #bit = yav.position_to_bit(pos) ### algorithm spend most of the time here (probably to order?)
+            #bit = yav.position_to_bit(pos) ### if this line is used range(61) is used instead
             bit = pos
             if board.full & (1 << bit) != 0:
                 if board.current & (1 << bit) != 0:
@@ -47,32 +52,35 @@ class Alpha_Beta:
         return hashcode
     
     def alpha_beta(self, depth = -1):
+        if self.board.move_count == 0:
+            return (2,3), 0
         if depth == -1:
             depth = self.search_depth
         inf = math.inf
+        start_time = time.time()
+        #print("")
         self.last_value, sudden_end = self._nega_max(self.board, depth, -inf, inf)
-
+        #print("Zeit: " + str(time.time()-start_time))
         if self.best_move != None:
             return self.best_move, sudden_end
         else:
+            print("this shouldnt happen, unless the game is over")
             random_moves = self.board.get_possible_actions()
             if random_moves == []:
                 return (0,0), 0
-            np.random.shuffle(random_moves)
-            return random_moves[0], 0
+            return random_moves[np.random.randint(len(random_moves))], 0
 
 
     def _nega_max(self, board: yav.Board, depth, alpha, beta):
-        if depth == 0 or board.move_count == 61:
+        if depth == 0 or board.is_over:
             return -evaluate(board), board.is_end_opponent() * (-1 if self.search_depth % 2 == 1 else 1)
         
         max_value = alpha
         sudden_end = 0
-
         moves = board.get_possible_actions()
         if self.run_iter_deepening:
             self.current_board = board
-            moves.sort(key=self._order)
+            moves.sort(key=self._promising_move_first)
 
         for move in moves:
             new_board, result = board.simulate_move(move)
@@ -86,8 +94,6 @@ class Alpha_Beta:
                     self.death_moves.append(move)
 
             if value > max_value:
-                if new_board.is_end() == -1:
-                    continue
                 max_value = value
                 if depth == self.search_depth:
                     self.best_move = move
@@ -99,6 +105,9 @@ class Alpha_Beta:
     def _order(self, e):
         board, result = self.current_board.simulate_move(e)
         return self.tp_table.get(self._hash(board),0)
+    
+    def _promising_move_first(self, e):
+        return (0 if self.best_move == e else 1)
 
 
 
@@ -121,7 +130,7 @@ bb_tb_right_one_gap = 2236041621642674176
 """
 TODO: z.B. |x-x-x| kann nicht zum gewinnen benutzt werden wird aber trozdem positiv bewertet
 """
-def evaluate(board: yav.Board, defence = False, p_two_row = 2, p_one_gap = 5, p_two_gap = 11, p_four_thread = 23, debug=False):
+def evaluate(board: yav.Board, defence = False, p_two_row = 5, p_one_gap = 2, p_two_gap = 21, p_four_thread = 43, debug=False):
     result = board.is_end_opponent()
     if result != 0:
         if result == 0.5:
