@@ -53,7 +53,8 @@ class Board:
             return -1
         
         """ DRAW """
-        if self.full == int("111110000111111000111111100111111110111111111011111111001111111000111111000011111", 2):
+        #if self.full == int("111110000111111000111111100111111110111111111011111111001111111000111111000011111", 2):
+        if self.move_count == 61:
             return 0.5
         
         return 0
@@ -76,7 +77,7 @@ class Board:
         self.full |= (1<<bit)
         self.move_count += 1
         result = self.is_end()
-        if result is not 0:
+        if result != 0:
             self.is_over = True
         return result
     
