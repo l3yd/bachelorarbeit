@@ -11,6 +11,7 @@ def game(board:yav.Board, players = ["human", "human"], start = np.random.randin
         if players[0] == "human" or players[1] == "human":
             print("Provide moves in the format: x y")
             print("")
+            print(C)
         board.print_board()
         print("")
         print("---")
@@ -57,8 +58,10 @@ def find_move(players, turn, board, printing, c):
             coords, sudden_end = ab.Alpha_Beta(board).iterative_deepening()
         elif player == "mcts_ab":
             coords = mcts.MCTS_alphabeta(board)
-        elif player == "mcts_pn":
-            coords = mcts.MCTS_PN(board)
+        elif player == "mcts_pns":
+            coords = mcts.MCTS_PNS(board)
+        elif player == "mcts_gdk":
+            coords = mcts.MCTS_gdk(board)
         else: # (randomplayer):
             actions = board.get_possible_actions()
             np.random.shuffle(actions)
@@ -146,7 +149,17 @@ def testboard_4(b):
     coords_full = [(2,2),(2,3),(3,2),(3,5),(5,3),(5,4),(5,6),(7,5),(7,6),(8,6)]
     return _create_testboard(b,coords_current,coords_full)
 
-legal_players = ["human", "minimax", "mm", "alphabeta", "ab", "mcts", "random","abiter","mcts_ab", "mcts_pn"]
+def testboard_5(b) -> yav.Board:
+    coords_current = [(0,1),(0,4)]
+    coords_full = [(0,3),(2,3),(5,3)]
+    return _create_testboard(b,coords_current,coords_full)
+
+def testboard_6(b) -> yav.Board:
+    coords_current = [(1,3),(2,1),(2,3),(2,4),(2,6),(4,3),(4,6),(5,4),(7,6)]
+    coords_full = [(2,2),(2,5),(3,2),(3,3),(5,3),(5,5),(5,6),(6,5),(8,6)]
+    return _create_testboard(b,coords_current,coords_full)
+
+legal_players = ["human", "minimax", "mm", "alphabeta", "ab", "mcts", "random","abiter","mcts_ab", "mcts_pns", "mcts_gdk"]
 
 if __name__ == '__main__':
     Board = yav.Board()
@@ -165,16 +178,17 @@ if __name__ == '__main__':
                 players[i] = "minimax"
             if players[i] == "ab":
                 players[i] = "alphabeta"
+        C = [np.sqrt(2),np.sqrt(2)]
         if arg == "game":
             try:
-                game(Board, players, int(sys.argv[4]))
+                game(Board, players, int(sys.argv[4]), C=C)
             except:
-                game(Board, players)
+                game(Board, players, C=C)
         else: # arg == "n_game"
             n_iterations = int(sys.argv[4])
             wins = [0,0]
             for i in range(n_iterations):
-                winner = game(Board, players, printing=False)
+                winner = game(Board, players, printing=True)
                 wins[winner-1] += 1
                 print("Game " + str(i+1) + " (of " + str(n_iterations) + ") is over." + str(players[0]) + " won " + str(wins[0]) + " | " + str(players[1]) + " won " + str(wins[1]))
             print(str(players[0]) + " won " + str(wins[0]) + " | " + str(players[1]) + " won " + str(wins[1]))
@@ -237,5 +251,41 @@ if __name__ == '__main__':
         printing = sys.argv[5] == "True"
 
         compare_mcts_params(n_iterations, [c1,c2], printing)
+    elif arg == "oneposition":
+        Board = testboard_5(Board)
+        coords = mcts.MCTS_alphabeta(Board)
+        result = Board.do_move(coords)
+        print("")
+        Board.print_board()
+        
+        result = 0
+        player = 0
+        while result == 0:
+            if player == 0:
+                coords = mcts.MCTS_PNS(Board)
+            else:
+                coords = input("Please provide a move: ")
+            result = Board.do_move(coords)
+            print("")
+            Board.print_board()
+            player = (player+1)%2
+    elif arg == "firstmoveMCTS":
+        nochmal = "yes"
+        while nochmal == "yes":
+            print("MCTS")
+            mcts.MCTS(Board)
+            input("MCTS_ab? ")
+            Board.reset_board()
+            mcts.MCTS_alphabeta(Board)
+            input("MCTS_pns? ")
+            Board.reset_board()
+            mcts.MCTS_PNS(Board)
+            nochmal = input("Nochmal? ")
+        print("")
+    elif arg == "oneposition_ab":
+        Board = testboard_6(Board)
+        coords, sudden_end = ab.Alpha_Beta(Board).alpha_beta()
+        Board.do_move(coords)
+        Board.print_board()
     else:
         print("Name of test not found")
