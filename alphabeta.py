@@ -36,10 +36,8 @@ class Alpha_Beta:
         for current_depth in depths:
             self.search_depth = current_depth
             best_move, sudden_end = self.alpha_beta(current_depth)
-            """new_board, result = self.board.simulate_move(best_move)
-            hashcode = self._hash(new_board)
-            self.tp_table[hashcode] = self.last_value"""
         print("Zeit all Iterations: " + str(time.time()-start_time))
+        print(self.last_value)
         return best_move, sudden_end
     
     def _hash(self, board: yav.Board):
@@ -60,8 +58,6 @@ class Alpha_Beta:
         return hashcode
     
     def alpha_beta(self, depth = -1):
-        if self.board.move_count == 0:
-            return (2,3), 0
         if depth == -1:
             depth = self.search_depth
         inf = math.inf
@@ -94,7 +90,7 @@ class Alpha_Beta:
         if depth == 0 or board.is_over:
             return -evaluate(board), board.is_end_opponent() * (-1 if self.search_depth % 2 == 1 else 1)
         
-        max_value = alpha
+        max_value = -math.inf
         sudden_end = 0
         moves = board.get_possible_actions()
         if self.run_iter_deepening:
@@ -116,7 +112,9 @@ class Alpha_Beta:
                 max_value = value
                 if depth == self.search_depth:
                     self.best_move = move
-                if max_value >= beta:
+                if value > alpha:
+                    alpha = value
+                if value >= beta:
                     break
         
         if value >= beta:
@@ -157,7 +155,7 @@ bb_tb_right_one_gap = 2236041621642674176
 """
 TODO: z.B. |x-x-x| kann nicht zum gewinnen benutzt werden wird aber trozdem positiv bewertet
 """
-def evaluate(board: yav.Board, defence = False, p_two_row = 5, p_one_gap = 2, p_two_gap = 21, p_four_thread = 43, debug=False):
+def evaluate(board: yav.Board, defence = False, p_two_row = 5, p_one_gap = 2, p_two_gap = 21, p_four_threat = 1043, debug=False):
     result = board.is_end_opponent()
     if result != 0:
         if result == 0.5:
@@ -229,38 +227,38 @@ def evaluate(board: yav.Board, defence = False, p_two_row = 5, p_one_gap = 2, p_
     n_two_gap_blocked = ver_blocked.bit_count() + diag_bt_blocked.bit_count() + diag_tb_blocked.bit_count()
     n_two_gap -= n_two_gap_blocked
 
-    # four_thread_1 = int("1101",2)
+    # four_threat_1 = int("1101",2)
     ver = ver_one_gap & ver_two_gap
-    diag_bottom_top = diag_bt_two_row & diag_bt_two_gap
-    diag_top_bottom = diag_tb_two_row & diag_tb_two_gap
-    n_four_thread = ver.bit_count() + diag_bottom_top.bit_count() + diag_top_bottom.bit_count()
+    diag_bottom_top = diag_bt_one_gap & diag_bt_two_gap
+    diag_top_bottom = diag_tb_one_gap & diag_tb_two_gap
+    n_four_threat = ver.bit_count() + diag_bottom_top.bit_count() + diag_top_bottom.bit_count()
         #accounting for enemy
     ver_blocked = ver & (opponent >> 1)
     diag_bt_blocked = diag_bottom_top & (opponent >> 18)
     diag_tb_blocked = diag_top_bottom & (opponent >> 20)
-    n_four_thred_blocked = ver_blocked.bit_count() + diag_bt_blocked.bit_count() + diag_tb_blocked.bit_count()
+    n_four_threat_blocked = ver_blocked.bit_count() + diag_bt_blocked.bit_count() + diag_tb_blocked.bit_count()
 
-    # four_thread_2 = int("1011",2)
+    # four_threat_2 = int("1011",2)
     ver = ver_two_row & ver_two_gap
-    diag_bottom_top = diag_bt_one_gap & diag_bt_two_gap
-    diag_top_bottom = diag_tb_one_gap & diag_tb_two_gap
-    n_four_thread += ver.bit_count() + diag_bottom_top.bit_count() + diag_top_bottom.bit_count()
+    diag_bottom_top = diag_bt_two_row & diag_bt_two_gap
+    diag_top_bottom = diag_tb_two_row & diag_tb_two_gap
+    n_four_threat += ver.bit_count() + diag_bottom_top.bit_count() + diag_top_bottom.bit_count()
         #accounting for enemy
     ver_blocked = ver & (opponent >> 2)
     diag_bt_blocked = diag_bottom_top & (opponent >> 9)
     diag_tb_blocked = diag_top_bottom & (opponent >> 10)
-    n_four_thred_blocked += ver_blocked.bit_count() + diag_bt_blocked.bit_count() + diag_tb_blocked.bit_count()
+    n_four_threat_blocked += ver_blocked.bit_count() + diag_bt_blocked.bit_count() + diag_tb_blocked.bit_count()
 
-    n_four_thread -= n_four_thred_blocked
+    n_four_threat -= n_four_threat_blocked
     
-    score = (n_two_row * p_two_row) + (n_one_gap * p_one_gap) + (n_two_gap * p_two_gap) + (n_four_thread * p_four_thread)
+    score = (n_two_row * p_two_row) + (n_one_gap * p_one_gap) + (n_two_gap * p_two_gap) + (n_four_threat * p_four_threat)
     if debug:
         print()
         print("individual scores:")
         print((n_two_row * p_two_row))
         print(n_one_gap * p_one_gap)
         print(n_two_gap * p_two_gap)
-        print((n_four_thread * p_four_thread))
+        print((n_four_threat * p_four_threat))
         print("---")
         print(score)
 
