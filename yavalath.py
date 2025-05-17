@@ -22,11 +22,11 @@ class Board:
 
     def is_end(self, check_opponent=False) -> int:
         """
-        function returns:
-            1 if player wins
-            -1 if player loses
-            0.5 if the game is a draw
-            0 if game continues
+        Funktion gibt zurück, ob das Spiel zu Ende ist:
+            1 falls der letzte Zug gewonnen hat
+            -1 falls er verloren hat
+            0.5 falls das Spiel in einem Unentschieden endet
+            0 falls das Spiel noch nicht zu Ende ist
         """
         
         board = self.full ^ self.current
@@ -69,7 +69,7 @@ class Board:
 
     def do_move(self, coords: tuple[int,int]) -> int:
         """
-        returns result of is_end after given move
+        Führt den Zug aus, und gibt das Ergebnis zurück.
         """
 
         bit = coords_to_bit(coords)
@@ -82,6 +82,9 @@ class Board:
         return result
     
     def simulate_move(self, coords: tuple[int,int]) -> tuple['Board', int]:
+        """
+        Gibt eine Kopie des Boards, auf dem der gegebene Zug ausgeführt wurde und das Ergebnis des Spiels, zurück.
+        """
         new_board = Board(self.current, self.full, self.move_count)
         result = new_board.do_move(coords)
         return new_board, result
@@ -93,15 +96,24 @@ class Board:
     """
 
     def get_possible_actions(self) -> list[tuple[int,int]]:
-        moves = []
+        """
+        Gibt eine Liste aller mögliche Züge zurück.
+        """
+
+        """moves = []
         for i in range(81):
             if i in self.illegalMoves:
                 continue
             if (self.full >> i) & 1 == 0:
-                moves.append(bit_to_coords(i))
+                moves.append(bit_to_coords(i))"""
+        moves = [bit_to_coords(i) for i in range(81) if (self.full >> i) & 1 == 0 and i not in self.illegalMoves]
         return moves
 
     def print_board(self):
+        """
+        Gibt das Board in der Konsole aus.
+        """
+
         print("      0 1 2 3 4")
         for row in range(9):
             print(str(row) + " ", end="")
@@ -135,10 +147,16 @@ class Board:
 
 
 def coords_to_bit(coords: tuple[int, int]) -> int:
+    """
+    Berechnet die Bit-Position der gegebenen Koordinaten.
+    """
     row, col = coords
     return row*9 + col
 
 def bit_to_coords(bit: int) -> tuple[int, int]:
+    """
+    Berechnet die Koordinaten der gegebenen Bit-Position.
+    """
     return (math.floor(bit / 9), bit % 9)
 
 

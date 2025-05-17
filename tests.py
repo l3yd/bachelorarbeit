@@ -178,7 +178,7 @@ if __name__ == '__main__':
                 players[i] = "minimax"
             if players[i] == "ab":
                 players[i] = "alphabeta"
-        C = [np.sqrt(2),np.sqrt(2)]
+        C = [1/np.sqrt(2),np.sqrt(2)]
         if arg == "game":
             try:
                 game(Board, players, int(sys.argv[4]), C=C)
