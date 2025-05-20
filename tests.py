@@ -309,5 +309,7 @@ if __name__ == '__main__':
         coords, sudden_end = ab.Alpha_Beta(Board).alpha_beta()
         Board.do_move(coords)
         Board.print_board()
+    elif arg == "start_abiter":
+        ab.Alpha_Beta(Board).iterative_deepening()
     else:
         print("Name of test not found")

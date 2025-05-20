@@ -5,7 +5,7 @@ import mcts
 import alphabeta as ab
 import minimax as mm
 
-def game(board:yav.Board, players, start = np.random.randint(1,3), printing = True, C = [np.sqrt(2), np.sqrt(2)]):
+def game(board:yav.Board, players, start = np.random.randint(1,3), printing = True, C = [np.sqrt(2), np.sqrt(2)], wait_to_continue=False):
     if printing:
         if players[0] == "human" or players[1] == "human":
             print("Provide moves in the format: x y")
@@ -17,6 +17,8 @@ def game(board:yav.Board, players, start = np.random.randint(1,3), printing = Tr
     turn = start
     continue_with_ab = [False, False]
     while True:
+        if wait_to_continue:
+            input("Press Enter to continue...")
         coords, continue_with_ab = find_move(players, turn, board, printing, C[turn-1], continue_with_ab)
         try:
             result = board.do_move((int(coords[0]),int(coords[1])))
@@ -77,7 +79,7 @@ def announce_winner(players, turn, C):
     if player == "human":
         print("Player " + str(turn) + " wins!")
     else:
-        if player == "mcts":
+        if player == "mcts" or player == "mcts_ab" or player == "mcts_pns":
             print(str(player) + "(" + str(turn) + " | c=" + str(C[turn-1]) + ")'s wins!")
         else:
             print(str(player) + "(" + str(turn) + ") wins!")
@@ -85,7 +87,7 @@ def announce_winner(players, turn, C):
 
 
 
-def _n_games(Board: yav.Board, n_iterations, players, start = None, printing=False):
+def n_games(Board: yav.Board, n_iterations, players, start = None, printing=False, C = [np.sqrt(2), np.sqrt(2)]):
     wins = [0,0]
     for i in range(n_iterations):
         if start == None:
@@ -98,6 +100,19 @@ def _n_games(Board: yav.Board, n_iterations, players, start = None, printing=Fal
     winrate = (max(wins)/n_iterations) * 100
     print(str(winrate) + "%")
 
+def print_help():
+    print("")
+    print("Invalid arguments!")
+    print("")
+    print("To play a game, execute the script with the following arguments:")
+    print("python3 game.py <player1> <player2> [<starting_player>]")
+    print("")
+    print("To let the computer play a number of games against itself, execute the script with the following arguments:")
+    print("python3 game.py <n_iterations> <player1> <player2> [<starting_player>]")
+    print("")
+    print("Available players:")
+    print(legal_players)
+    print("")
 
 legal_players = ["human", "minimax", "mm", "alphabeta", "ab", "ab_iter", "mcts","mcts_ab", "mcts_pns", "random"]
 
@@ -106,11 +121,14 @@ if __name__ == '__main__':
     arg = sys.argv[1]
 
     C = [1/np.sqrt(2),np.sqrt(2)]
-
     if arg in legal_players:
         # 'n_iterations' 'player' 'player' [staring_player]
         player1 = arg
-        player2 = sys.argv[2]
+        try:
+            player2 = sys.argv[2]
+        except:
+            print_help()
+            raise ValueError("Not enough players provided!")
         assert player1 in legal_players and player2 in legal_players
         players = [player1, player2]
         for i in range(len(players)):
@@ -130,8 +148,12 @@ if __name__ == '__main__':
     
     elif arg.isdigit():
         # 'n_iterations' 'player' 'player' [staring_player]
-        player1 = sys.argv[2]
-        player2 = sys.argv[3]
+        try:
+            player1 = sys.argv[2]
+            player2 = sys.argv[3]
+        except:
+            print_help()
+            raise ValueError("Not enough players provided!")
         assert player1 in legal_players and player2 in legal_players
         assert player1 != "human" and player2 != "human"
         players = [player1, player2]
@@ -142,15 +164,31 @@ if __name__ == '__main__':
         except:
             start = None
 
-        _n_games(Board, n_iterations, players, start=start, printing=False)
+        n_games(Board, n_iterations, players, start=start, printing=False)
+    elif arg == "control":
+        # 'n_iterations' 'player' 'player' [staring_player]
+        try:
+            player1 = sys.argv[2]
+            player2 = sys.argv[3]
+        except:
+            print_help()
+            raise ValueError("Not enough players provided!")
+        assert player1 in legal_players and player2 in legal_players
+        players = [player1, player2]
+        for i in range(len(players)):
+            if players[i] == "mm":
+                players[i] = "minimax"
+            if players[i] == "ab":
+                players[i] = "alphabeta"
+        try:
+            start = int(sys.argv[4])
+        except:
+            start = None
+        
+        if start == None:
+            game(Board, players, C=C, wait_to_continue=True)
+        else:
+            game(Board, players, start=start, C=C, wait_to_continue=True)
     else:
-        print("")
-        print("To play a game, execute the script with the following arguments:")
-        print("python3 game.py <player1> <player2> [<starting_player>]")
-        print("")
-        print("To let the computer play a number of games against itself, execute the script with the following arguments:")
-        print("python3 game.py <n_iterations> <player1> <player2> [<starting_player>]")
-        print("")
-        print("Available players:")
-        print(legal_players)
-        print("")
+        print_help()
+        

@@ -12,42 +12,34 @@ class TTNode:
         self.sudden_end = sudden_end
 
 class Alpha_Beta:
-    def __init__(self, board: yav.Board, search_depth = 5): #max search depth = 5 (6 took over 8 minutes)
+    def __init__(self, board: yav.Board, search_depth = 5):
         self.board = board
         self.search_depth = search_depth
         self.best_move = None
-        self.last_value = 0
 
         self.run_iter_deepening = False
-        self.current_board = board
+        self.start_time = -1
+        self.max_time = -1
         self.tp_table: dict[int, TTNode] = {}
-        #pseudorandom numbers for zobrist hashing
-        self.table = np.random.randint(2**32-1,size=(81,2),dtype=np.int64)
-        self.move_second_player = np.random.randint(2**32,dtype=np.int64)
 
-        # for keeping track of moves leading to a sudden death
+        # Pseudozufallszahlen für Zobrist Hashing
+        self.table = np.random.randint(2**64-1,size=(81,2),dtype=np.uint64)
+        #self.move_second_player = np.random.randint(2**64-1,dtype=np.uint64)
+
+        # Züge die zum sicheren Verlieren führen (für das Endgame von MCTS mit Alpha-Beta verwendet)
         self.death_moves = []
 
-    def iterative_deepening(self):
-        start_time = time.time()
-        self.run_iter_deepening = True
-        best_move = None
-        depths = range(1, self.search_depth+1)
-        for current_depth in depths:
-            self.search_depth = current_depth
-            best_move, sudden_end = self.alpha_beta(current_depth)
-        print("Zeit all Iterations: " + str(time.time()-start_time))
-        print(self.last_value)
-        return best_move, sudden_end
-    
-    def _hash(self, board: yav.Board):
+    def _hash(self, board: yav.Board) -> int:
+        """
+        Zobrist hashing für das gebene Board.
+        """
         hashcode = 0
         player = board.move_count % 2
-        if player:
-            hashcode ^= self.move_second_player
+        """if player:
+            hashcode ^= self.move_second_player"""
         
         for pos in range(81):
-            #bit = yav.position_to_bit(pos) ### if this line is used range(61) is used instead
+            #bit = yav.position_to_bit(pos) ### position_to_bit kostet zu viel Zeit
             bit = pos
             if board.full & (1 << bit) != 0:
                 if board.current & (1 << bit) != 0:
@@ -56,14 +48,33 @@ class Alpha_Beta:
                     belongs_to = (player+1) % 2
                 hashcode ^= self.table[pos][belongs_to]
         return hashcode
+
+    def iterative_deepening(self, max_time = 15):
+        start_time = time.time()
+        self.run_iter_deepening = True
+        best_move = None
+        current_depth = 1
+        self.max_time = max_time
+        self.start_time = time.time()
+        while time.time() - self.start_time < self.max_time:
+            try:
+                self.search_depth = current_depth
+                best_move, sudden_end = self.alpha_beta(current_depth)
+                current_depth += 1
+            except TimeoutError:
+                break
+        print("Zeit all Iterations: " + str(time.time()-start_time))
+        print(self.best_move)
+        return best_move, sudden_end
     
     def alpha_beta(self, depth = -1):
         if depth == -1:
+            # Falls alpha_beta nicht mit iterativer Tiefensuche aufgerufen wird
             depth = self.search_depth
         inf = math.inf
         start_time = time.time()
         print("")
-        self.last_value, sudden_end = self._nega_max(self.board, depth, -inf, inf)
+        last_value, sudden_end = self._nega_max(self.board, depth, -inf, inf)
         print("Zeit: " + str(time.time()-start_time))
         if self.best_move != None:
             return self.best_move, sudden_end
@@ -76,30 +87,39 @@ class Alpha_Beta:
 
 
     def _nega_max(self, board: yav.Board, depth, alpha, beta):
+        if self.run_iter_deepening:
+            if time.time() - self.start_time > self.max_time:
+                raise TimeoutError("max time reached")
+
         hash = self._hash(board)
+        entry = None
         if hash in self.tp_table:
-            node = self.tp_table[hash]
-            if node.depth >= depth:
-                if node.node_type == "EXACT":
-                    return node.value, node.sudden_end
-                elif node.node_type == "LOWER" and node.value >= beta:
-                    return node.value, node.sudden_end
-                elif node.node_type == "UPPER" and node.value < alpha:
-                    return node.value, node.sudden_end
+            entry = self.tp_table[hash]
+            if entry.depth >= depth:
+                if entry.node_type == "EXACT":
+                    return entry.value, entry.sudden_end
+                elif entry.node_type == "LOWER" and entry.value >= beta:
+                    alpha = max(alpha, entry.value)
+                elif entry.node_type == "UPPER" and entry.value < alpha:
+                    beta = min(beta, entry.value)
+            if alpha >= beta:
+                return entry.value, entry.sudden_end
 
         if depth == 0 or board.is_over:
             return -evaluate(board), board.is_end_opponent() * (-1 if self.search_depth % 2 == 1 else 1)
         
         max_value = -math.inf
-        sudden_end = 0
-        moves = board.get_possible_actions()
-        if self.run_iter_deepening:
-            self.current_board = board
-            moves.sort(key=self._promising_move_first)
+        best_move = None
+        sudden_end = 1 if depth % 2 == 1 else -1 ### TODO is this correct?
 
+        moves = board.get_possible_actions()
+        if self.run_iter_deepening and entry is not None:
+            moves.remove(entry.best_move)
+            moves.insert(0, entry.best_move)
+        
         for move in moves:
             new_board, result = board.simulate_move(move)
-            value, end = self._nega_max(new_board, depth-1, -beta, -max_value)
+            value, end = self._nega_max(new_board, depth-1, -beta, -alpha)
             value = -value
 
             if (depth % 2 == 0 and end > sudden_end) or (depth % 2 == 1 and end < sudden_end):
@@ -110,30 +130,26 @@ class Alpha_Beta:
 
             if value > max_value:
                 max_value = value
-                if depth == self.search_depth:
-                    self.best_move = move
+                best_move = move
+
                 if value > alpha:
                     alpha = value
-                if value >= beta:
-                    break
+            if value >= beta:
+                break
+
+        if depth == self.search_depth:
+            self.best_move = best_move
         
-        if value >= beta:
+        if max_value >= beta:
             node_type = "LOWER"
-        elif value <= alpha:
+        elif max_value <= alpha:
             node_type = "UPPER"
         else:
             node_type = "EXACT"
 
-        self.tp_table[hash] = TTNode(depth, value, node_type, self.best_move, sudden_end)
+        assert best_move is not None, f"best_move is None at depth {depth}"
+        self.tp_table[hash] = TTNode(depth, max_value, node_type, best_move, sudden_end)
         return max_value, sudden_end
-    
-    def _order(self, e):
-        board, result = self.current_board.simulate_move(e)
-        return self.tp_table.get(self._hash(board),0)
-    
-    def _promising_move_first(self, e):
-        return (0 if self.best_move == e else 1)
-
 
 
 # bitboards where the coordinates where the border blocks a row beeing completed are set to 1 and the rest to 0
@@ -155,12 +171,12 @@ bb_tb_right_one_gap = 2236041621642674176
 """
 TODO: z.B. |x-x-x| kann nicht zum gewinnen benutzt werden wird aber trozdem positiv bewertet
 """
-def evaluate(board: yav.Board, defence = False, p_two_row = 5, p_one_gap = 2, p_two_gap = 21, p_four_threat = 1043, debug=False):
+def evaluate(board: yav.Board, defence = False, p_two_row = 5, p_one_gap = 5, p_two_gap = 20, p_four_threat = 41, debug=False):
     result = board.is_end_opponent()
     if result != 0:
         if result == 0.5:
             return 0
-        score = math.inf * result
+        score = 1e9 * result
         if debug:
             print()
             print(score)
