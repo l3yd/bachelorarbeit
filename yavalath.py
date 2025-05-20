@@ -20,6 +20,12 @@ class Board:
         self.full = 0
         self.move_count = 0
 
+    def copy(self) -> 'Board':
+        """
+        Gibt eine Kopie des Boards zurück.
+        """
+        return Board(self.current, self.full, self.move_count)
+
     def is_end(self, check_opponent=False) -> int:
         """
         Funktion gibt zurück, ob das Spiel zu Ende ist:
@@ -29,31 +35,25 @@ class Board:
             0 falls das Spiel noch nicht zu Ende ist
         """
         
-        board = self.full ^ self.current
+        board = self.current if check_opponent else self.full ^ self.current
 
-        if check_opponent:
-            board = self.current
-
-        """ WINS """
         # vertical (1-er Schritte)
         ver = board & (board >> 1) & (board >> 2)
-        if ver & (board >> 3) != 0:
-            return 1
         # diagonal bottom -> top (9-er Schritte)
         diag_bottom_top = board & (board >> 9) & (board >> 18)
-        if diag_bottom_top & (board >> 27) != 0:
-            return 1
         # diagonal top -> bottom (10-er Schritte)
         diag_top_bottom = board & (board >> 10) & (board >> 20)
-        if diag_top_bottom & (board >> 30) != 0:
-            return 1
         
+        """ WINS """
+        if ver & (board >> 3) != 0 or diag_bottom_top & (board >> 27) != 0 or diag_top_bottom & (board >> 30) != 0:
+            return 1
+
         """ LOSES """
         if ver != 0 or diag_bottom_top != 0 or diag_top_bottom != 0:
             return -1
         
         """ DRAW """
-        #if self.full == int("111110000111111000111111100111111110111111111011111111001111111000111111000011111", 2):
+        #if self.full == 0b111110000111111000111111100111111110111111111011111111001111111000111111000011111:
         if self.move_count == 61:
             return 0.5
         
@@ -62,7 +62,7 @@ class Board:
     def is_end_opponent(self) -> int:
         result = self.is_end()
         if result == 0:
-            result = self.is_end(True)
+            result = self.is_end(check_opponent=True)
             if result != 0.5:
                 result = -result
         return result
@@ -85,7 +85,7 @@ class Board:
         """
         Gibt eine Kopie des Boards, auf dem der gegebene Zug ausgeführt wurde und das Ergebnis des Spiels, zurück.
         """
-        new_board = Board(self.current, self.full, self.move_count)
+        new_board = self.copy()
         result = new_board.do_move(coords)
         return new_board, result
 
@@ -160,15 +160,17 @@ def bit_to_coords(bit: int) -> tuple[int, int]:
     return (math.floor(bit / 9), bit % 9)
 
 
-thresholds = [5,15,25,35,45,54,63,72,81]
-subtrahends = [0,4, 7, 9,10,11,13,16,20]
+
+difference = [0,4,7,9,10,11,13,16,20]
 
 def position_to_bit(pos: int) -> int:
+    thresholds = [(0,4),(5,10),(11,17),(18,25),(26,34),(35,42),(43,49),(50,55),(56,60)]
     for i in range(len(thresholds)):
-        if pos < thresholds[i]:
-            return pos - subtrahends[i]
+        if pos >= thresholds[i][0] and pos <= thresholds[i][1]:
+            return pos + difference[i]
 
 def bit_to_position(bit: int) -> int:
+    thresholds = [(0,5),(9,15),(18,25),(27,35),(36,45),(46,54),(56,63),(66,72),(76,81)]
     for i in range(len(thresholds)):
-        if bit < thresholds[i]:
-            return bit + subtrahends[i]
+        if bit < thresholds[i][1] and bit >= thresholds[i][0]:
+            return bit - difference[i]
