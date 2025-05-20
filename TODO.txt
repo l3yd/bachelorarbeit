@@ -1,6 +1,0 @@
-worked on:
-    - iterative deepening works & fixed bugs in evaluate
-
-next time:
-    - integrate to mcts
-    - proof number search

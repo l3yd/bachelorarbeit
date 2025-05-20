@@ -5,6 +5,11 @@ import minimax as mm
 import alphabeta as ab
 import mcts
 
+"""
+Dieses Skript wurde für das Testsen während der Implementierung der Algorithmen genutzt.
+Die Tests sind nicht vollständig und werden nicht mehr genutzt.
+"""
+
 def game(board:yav.Board, players = ["human", "human"], start = np.random.randint(1,3), printing = True, C = [np.sqrt(2), np.sqrt(2)]):
     board.reset_board()
     if printing:
@@ -17,9 +22,13 @@ def game(board:yav.Board, players = ["human", "human"], start = np.random.randin
         print("---")
         print("")
     turn = start
+    continue_with_ab = [False, False]
     while True:
-        coords = find_move(players, turn, board, printing, C[turn-1])
-        result = board.do_move((int(coords[0]),int(coords[1])))
+        coords, continue_with_ab = find_move(players, turn, board, printing, C[turn-1], continue_with_ab)
+        try:
+            result = board.do_move((int(coords[0]),int(coords[1])))
+        except:
+            raise ValueError("Illegal move!")
         if printing:
             print("")
             board.print_board()
@@ -37,8 +46,11 @@ def game(board:yav.Board, players = ["human", "human"], start = np.random.randin
             return turn
         #print(board.move_count)
 
-def find_move(players, turn, board, printing, c):
+def find_move(players, turn, board, printing, c, continue_with_ab):
     player = players[turn-1]
+    if continue_with_ab[turn-1]:
+        player = "abiter"
+
     if player == "human":
         move = input("Player " + str(turn) + ", please provide a move: ")
         coords = move.split()
@@ -53,20 +65,20 @@ def find_move(players, turn, board, printing, c):
         elif player == "alphabeta":
             coords, sudden_end = ab.Alpha_Beta(board).alpha_beta()
         elif player == "mcts":
-            coords = mcts.MCTS(board, c)
+            coords = mcts.MCTS(board, c, use_gdk=True)
         elif player == "abiter":
             coords, sudden_end = ab.Alpha_Beta(board).iterative_deepening()
         elif player == "mcts_ab":
-            coords = mcts.MCTS_alphabeta(board)
+            coords, sudden_win_found = mcts.MCTS_alphabeta(board, c, use_gdk=True)
+            if sudden_win_found:
+                continue_with_ab[turn-1] = True
         elif player == "mcts_pns":
-            coords = mcts.MCTS_PNS(board)
-        elif player == "mcts_gdk":
-            coords = mcts.MCTS_gdk(board)
+            coords = mcts.MCTS_PNS(board, c, use_gdk=True)
         else: # (randomplayer):
             actions = board.get_possible_actions()
             np.random.shuffle(actions)
             coords =  actions[0]
-    return coords
+    return coords, continue_with_ab
 
 def announce_winner(players, turn, C):
     player = players[turn-1]
@@ -157,6 +169,16 @@ def testboard_5(b) -> yav.Board:
 def testboard_6(b) -> yav.Board:
     coords_current = [(1,3),(2,1),(2,3),(2,4),(2,6),(4,3),(4,6),(5,4),(7,6)]
     coords_full = [(2,2),(2,5),(3,2),(3,3),(5,3),(5,5),(5,6),(6,5),(8,6)]
+    return _create_testboard(b,coords_current,coords_full)
+
+def testboard_7(b) -> yav.Board:
+    coords_current = [(2,3),(2,4),(2,6),(4,5),(5,6),(7,8)]
+    coords_full = [(0,4),(2,5),(3,4),(3,7),(5,3),(6,7)]
+    return _create_testboard(b,coords_current,coords_full)
+
+def testboard_8(b) -> yav.Board:
+    coords_current = [(2,1),(2,3),(2,4),(2,6),(3,6),(4,2),(4,5),(5,2),(5,6),(5,7),(6,5),(6,6),(7,8)]
+    coords_full = [(0,4),(2,2),(2,5),(3,4),(3,7),(4,3),(4,6),(5,1),(5,3),(5,4),(6,7),(7,3),(7,6)]
     return _create_testboard(b,coords_current,coords_full)
 
 legal_players = ["human", "minimax", "mm", "alphabeta", "ab", "mcts", "random","abiter","mcts_ab", "mcts_pns", "mcts_gdk"]
