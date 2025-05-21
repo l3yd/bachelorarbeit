@@ -39,6 +39,10 @@ def game(board:yav.Board, players, start = np.random.randint(1,3), printing = Tr
             if printing:
                 announce_winner(players, turn, C)
             return turn
+        if result == 0.5:
+            if printing:
+                print("Draw!")
+            return -1
 
 def find_move(players, turn, board, printing, c, continue_with_ab):
     player = players[turn-1]
@@ -89,14 +93,17 @@ def announce_winner(players, turn, C):
 
 def n_games(Board: yav.Board, n_iterations, players, start = None, printing=False, C = [np.sqrt(2), np.sqrt(2)]):
     wins = [0,0]
+    draws = 0
     for i in range(n_iterations):
         if start == None:
             winner = game(Board.copy(), players, printing=printing, C=C)
         else:
             winner = game(Board.copy(), players,start=start, printing=False, C=C)
+        if winner == -1:
+            draws += 1
         wins[winner-1] += 1
-        print("Game " + str(i+1) + " (of " + str(n_iterations) + ") is over. " + str(players[0]) + " won " + str(wins[0]) + " | " + str(players[1]) + " won " + str(wins[1]))
-    print(str(players[0]) + " won " + str(wins[0]) + " | " + str(players[1]) + " won " + str(wins[1]))
+        print("Game " + str(i+1) + " (of " + str(n_iterations) + ") is over. " + str(players[0]) + " won " + str(wins[0]) + " | " + str(players[1]) + " won " + str(wins[1]) + " | draws: " + str(draws))
+    print(str(players[0]) + " won " + str(wins[0]) + " | " + str(players[1]) + " won " + str(wins[1]) + " | draws: " + str(draws))
     winrate = (max(wins)/n_iterations) * 100
     print(str(winrate) + "%")
 
