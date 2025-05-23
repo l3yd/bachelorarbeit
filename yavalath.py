@@ -25,6 +25,29 @@ class Board:
         Gibt eine Kopie des Boards zurück.
         """
         return Board(self.current, self.full, self.move_count)
+    
+    def flipped_copy(self) -> 'Board':
+        """
+        Gibt eine Kopie des Boards zurück, wobei die current getauscht wird.
+        Ergibt nur sinn, falls beide Spieler die gleiche Anzahl von Zügen gespielt haben.
+        """
+        if self.move_count % 2 == 1:
+            raise ValueError("Only Boards with even number of moves played, can be flipped!")
+        new_board = self.copy()
+        new_board.current ^= new_board.full
+        return new_board
+    
+    def setup(self, coords_current: list[tuple[int,int]], coords_full: list[tuple[int,int]]):
+        """
+        Setup des Boards mit den gegbenen Koordinaten.
+        """
+        for i in range(len(coords_current)):
+            self.current |= (1 << coords_to_bit(coords_current[i]))
+        for i in range(len(coords_full)):
+            self.full |= (1 << coords_to_bit(coords_full[i]))
+        self.full |= self.current
+        self.move_count = len(coords_current) +  len(coords_full)
+        self.is_over = True if self.is_end() != 0 else False
 
     def is_end(self, check_opponent=False) -> int:
         """
@@ -129,11 +152,15 @@ class Board:
 
             for col in range(first_col, last_col+1):
                 bit = coords_to_bit((row, col))
-                next_turn = "⧆ "
-                current_turn = "⧇ "
+                #next_turn = "⧆ "
+                next_turn = "x "
+                #current_turn = "⧇ "
+                current_turn = "o "
                 if self.move_count % 2 == 0:
-                    next_turn = "⧇ "
-                    current_turn = "⧆ "
+                    #next_turn = "⧇ "
+                    next_turn = "o "
+                    #current_turn = "⧆ "
+                    current_turn = "x "
                 if (self.full >> bit) & 1 == 1:
                     if (self.current >> bit) & 1 == 1:
                         print(next_turn, end="")
