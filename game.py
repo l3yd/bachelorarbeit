@@ -5,6 +5,10 @@ import mcts
 import alphabeta as ab
 import minimax as mm
 
+"""
+Mit diesem Skript können Spiele manuel gestartet werden. Zum testen gedacht.
+"""
+
 def game(board:yav.Board, players, start = np.random.randint(1,3), printing = True, C = [np.sqrt(2), np.sqrt(2)], wait_to_continue=False):
     if printing:
         if players[0] == "human" or players[1] == "human":
@@ -63,15 +67,17 @@ def find_move(players, turn, board, printing, c, continue_with_ab):
         elif player == "alphabeta":
             coords, sudden_end = ab.Alpha_Beta(board).alpha_beta()
         elif player == "mcts":
-            coords = mcts.MCTS(board, c, use_gdk=True)
+            coords = mcts.MCTS(board, c, use_gdk=True)[0]
         elif player == "ab_iter":
-            coords, sudden_end = ab.Alpha_Beta(board).iterative_deepening()
+            coords, sudden_end = ab.Alpha_Beta(board).iterative_deepening(max_time=15)
         elif player == "mcts_ab":
-            coords, sudden_win_found = mcts.MCTS_alphabeta(board, c, use_gdk=True)
+            returned_values = mcts.MCTS_alphabeta(board, c, use_gdk=True, max_time=15)
+            coords = returned_values[0]
+            sudden_win_found = returned_values[3]
             if sudden_win_found:
                 continue_with_ab[turn-1] = True
         elif player == "mcts_pns":
-            coords = mcts.MCTS_PNS(board, c, use_gdk=True)
+            coords = mcts.MCTS_PNS(board, c, use_gdk=True)[0]
         else: # (randomplayer):
             actions = board.get_possible_actions()
             np.random.shuffle(actions)
@@ -127,7 +133,7 @@ if __name__ == '__main__':
     Board = yav.Board()
     arg = sys.argv[1]
 
-    C = [1/np.sqrt(2),np.sqrt(2)]
+    C = [np.sqrt(2),np.sqrt(2)]
     if arg in legal_players:
         # 'n_iterations' 'player' 'player' [staring_player]
         player1 = arg
