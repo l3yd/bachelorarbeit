@@ -4,6 +4,9 @@ import numpy as np
 import minimax as mm
 import alphabeta as ab
 import mcts
+import matplotlib.pyplot as plt
+import csv
+import time
 
 """
 Dieses Skript wurde für das Testsen während der Implementierung der Algorithmen genutzt.
@@ -72,6 +75,7 @@ def find_move(players, turn, board, printing, c, continue_with_ab):
             coords, sudden_win_found = mcts.MCTS_alphabeta(board, c, use_gdk=True)
             if sudden_win_found:
                 continue_with_ab[turn-1] = True
+                print("sudden win found!!!!!")
         elif player == "mcts_pns":
             coords = mcts.MCTS_PNS(board, c, use_gdk=True)
         else: # (randomplayer):
@@ -309,7 +313,158 @@ if __name__ == '__main__':
         coords, sudden_end = ab.Alpha_Beta(Board).alpha_beta()
         Board.do_move(coords)
         Board.print_board()
-    elif arg == "start_abiter":
-        ab.Alpha_Beta(Board).iterative_deepening()
+    elif arg == "start":
+        #ab.Alpha_Beta(Board).iterative_deepening()
+        mcts.MCTS_alphabeta(Board)
+    elif arg == "mcts_cs":
+        try:
+            usegdk = sys.argv[2]
+        except:
+            raise ValueError("No filename provided")
+        coords = mcts.MCTS_alphabeta(Board, c=np.sqrt(2), use_gdk=False)
+    elif arg == "plot_mcts":
+        try:
+            filename = sys.argv[2]
+            print(filename)
+        except:
+            raise ValueError("No filename provided")
+        
+        with open(filename, 'r', newline='', encoding='utf-16') as csvfile:
+            reader = csv.reader(csvfile, delimiter=',')
+            line_count = 0
+            
+            at_border = [0, 1, 2, 3, 4, 5, 10, 11, 17, 18, 25, 26, 34, 35, 42, 43, 49, 50, 55, 56, 57, 58, 59, 60, 61]
+            one_step = [6, 7, 8, 9, 12, 16, 19, 24, 27, 33, 36, 41, 44, 48, 51, 52, 53, 54]
+            two_steps = [13, 14, 15, 20, 23, 28, 32, 37, 40, 45, 46, 47]
+            middle = [21, 22, 29, 31, 38, 39, 30]
+
+            x = []
+            y_uct = []
+            y_exploration = []
+            y_exploitation = []
+
+            fig1, ax1 = plt.subplots()
+            line11, = ax1.plot([], [], label='at_border', color='blue')
+            line12, = ax1.plot([], [], label='one_step', color='red')
+            line13, = ax1.plot([], [], label='two_steps', color='green')
+            line14, = ax1.plot([], [], label='middle', color='purple')
+            ax1.legend()
+            fig2, ax2 = plt.subplots()
+            line21, = ax2.plot([], [], label='at_border', color='blue')
+            line22, = ax2.plot([], [], label='one_step', color='red')
+            line23, = ax2.plot([], [], label='two_steps', color='green')
+            line24, = ax2.plot([], [], label='middle', color='purple')
+            ax2.legend()
+            fig3, ax3 = plt.subplots()
+            line31, = ax3.plot([], [], label='at_border', color='blue')
+            line32, = ax3.plot([], [], label='one_step', color='red')
+            line33, = ax3.plot([], [], label='two_steps', color='green')
+            line34, = ax3.plot([], [], label='middle', color='purple')
+            ax3.legend()
+            plt.ion()
+            plt.show()
+
+            uct = [0,0,0,0]
+            exploration = [0,0,0,0]
+            exploitation = [0,0,0,0]
+
+            for row in reader:
+                curr = line_count % 61
+                if curr in at_border:
+                    index = 0
+                elif curr in one_step:
+                    index = 1
+                elif curr in two_steps:
+                    index = 2
+                elif curr in middle:
+                    index = 3
+                else: # curr in middle / should happen da auskomentiert
+                    print(f"whoops {curr}")
+                    index = 4
+                
+                uct[index] += float(row[1])
+                exploitation[index] += float(row[2])
+                exploration[index] += float(row[3])
+
+                line_count += 1
+                if line_count % 61 == 0:
+                    x.append(float(row[0]))
+
+                    uct[0] /= len(at_border)
+                    uct[1] /= len(one_step)
+                    uct[2] /= len(two_steps)
+                    uct[3] /= len(middle)
+
+                    y_uct.append(uct)
+
+                    exploitation[0] /= len(at_border)
+                    exploitation[1] /= len(one_step)
+                    exploitation[2] /= len(two_steps)
+                    exploitation[3] /= len(middle)
+
+                    y_exploitation.append(exploitation)
+
+                    exploration[0] /= len(at_border)
+                    exploration[1] /= len(one_step)
+                    exploration[2] /= len(two_steps)
+                    exploration[3] /= len(middle)
+                    for i in range(4):
+                        if exploration[i] < 0:
+                            print(exploration[i])
+
+                    y_exploration.append(exploration)
+
+                    line11.set_data(x, [value[0] for value in y_uct])
+                    line12.set_data(x, [value[1] for value in y_uct])
+                    line13.set_data(x, [value[2] for value in y_uct])
+                    line14.set_data(x, [value[3] for value in y_uct])
+
+                    line21.set_data(x, [value[0] for value in y_exploitation])
+                    line22.set_data(x, [value[1] for value in y_exploitation])
+                    line23.set_data(x, [value[2] for value in y_exploitation])
+                    line24.set_data(x, [value[3] for value in y_exploitation])
+
+                    line31.set_data(x, [value[0] for value in y_exploration])
+                    line32.set_data(x, [value[1] for value in y_exploration])
+                    line33.set_data(x, [value[2] for value in y_exploration])
+                    line34.set_data(x, [value[3] for value in y_exploration])
+
+                    """ax1.relim()
+                    ax1.autoscale_view()
+                    ax2.relim()
+                    ax2.autoscale_view()
+                    ax3.relim()
+                    ax3.autoscale_view()
+                    plt.draw()"""
+
+                    uct = [0,0,0,0,0]
+                    exploration = [0,0,0,0,0]
+                    exploitation = [0,0,0,0,0]
+            ax1.relim()
+            ax1.autoscale_view()
+            ax2.relim()
+            ax2.autoscale_view()
+            ax3.relim()
+            ax3.autoscale_view()
+            plt.draw()
+            plt.show(block=True) 
+    elif arg == "test_tt":
+        for i in range(3,7):
+            Board.reset_board()
+            start_time = time.time()
+            coords, _ = ab.Alpha_Beta(Board, search_depth=i, use_tt=False).alpha_beta()
+            time_used = time.time() - start_time
+            print(f'Alpha Beta took {time_used} seconds for search depth {i}.')
+            Board.do_move(coords)
+            Board.print_board()
+        for i in range(3,7):
+            Board.reset_board()
+            start_time = time.time()
+            # detect_sudden_end=True beendet den Algorithmus, wenn search_depth berechnet wurde
+            coords, _ = ab.Alpha_Beta(Board, search_depth=i, use_tt=False).iterative_deepening(max_time=60, detect_sudden_end_k=i)
+            time_used = time.time() - start_time
+            print(f'Iterative Deepening took {time_used} seconds for search depth {i}.')
+            Board.do_move(coords)
+            Board.print_board()
     else:
         print("Name of test not found")
