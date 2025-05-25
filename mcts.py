@@ -44,98 +44,84 @@ def bewertung(e):
 def sort_by_action(e):
     return e.a
 
-def MCTS_alphabeta(board: yav.Board, c = np.sqrt(2), k = 4, max_time = 15):
+def MCTS_alphabeta(board: yav.Board, c = np.sqrt(2), k = 4, use_gdk=True, max_time = 15):
     root = MCTNode(board, board.get_possible_actions())
     start_time = time.time()
     n_iter = 0
+    nodes_expanded = 0
     while time.time() - start_time < max_time:
-        steps_from_root = _MCTS_one_iteration(root, c)
+        steps_from_root, expanded = _MCTS_one_iteration(root, c, use_gdk)
+        if expanded:
+            nodes_expanded += 1
         n_iter += 1
-        if steps_from_root > k and root.death_moves == []:
-            AB = ab.Alpha_Beta(board,k)
-            move, sudden_end = AB.iterative_deepening()
+        if steps_from_root < k and root.death_moves == []:
+            ab_object = ab.Alpha_Beta(board,k)
+            move, sudden_end = ab_object.iterative_deepening(detect_sudden_end_k=k)
             if sudden_end == 1:
-                """print("Number of iterations: " + str(n_iter))
-                print("Nach Bewertung sortiert: ")
-                root.child_nodes.sort(key=bewertung)
-                for child in root.child_nodes:
-                    print(str(child.a) + ": " + str(child.q) + " / " + str(child.n) + " = " + str(child.q/child.n))
-                print("")
-                print("Nach Move sotiert: ")
-                root.child_nodes.sort(key=sort_by_action)
-                for child in root.child_nodes:
-                    print(str(child.a) + ": " + str(child.q) + " / " + str(child.n) + " = " + str(child.q/child.n))"""
-                return move
+                print(f"Number of iterations: {n_iter} and sudden win was found!")
+                return move, n_iter, nodes_expanded, True
             elif sudden_end == -1:
-                root.death_moves = AB.death_moves
-    """print("Number of iterations: " + str(n_iter))
-    print("Nach Bewertung sortiert: ")
-    root.child_nodes.sort(key=bewertung)
-    for child in root.child_nodes:
-        print(str(child.a) + ": " + str(child.q) + " / " + str(child.n) + " = " + str(child.q/child.n))
-    print("")
-    print("Nach Move sotiert: ")
-    root.child_nodes.sort(key=sort_by_action)
-    for child in root.child_nodes:
-        print(str(child.a) + ": " + str(child.q) + " / " + str(child.n) + " = " + str(child.q/child.n))"""
-    return _UCT(root, 0).a
+                root.death_moves = ab_object.death_moves
+    #print("Number of iterations: " + str(n_iter))
+    return _UCT(root, 0).a, n_iter, nodes_expanded, False
 
-def MCTS_PNS(board: yav.Board, c = np.sqrt(2), C_pn = 1, max_time = 15):
+def MCTS_PNS(board: yav.Board, c = np.sqrt(2), C_pn = 1, use_gdk=True, max_time = 15):
     root = MCTNode(board, board.get_possible_actions())
     root.PNS_type = "OR"
-    start_time = time.time()#
+    start_time = time.time()
     n_iter = 0
+    nodes_expanded = 0
     while time.time() - start_time < max_time:
-        v = _selection_PN(root, c, C_pn)
+        v, expanded = _selection(root, c, C_pn)
         leaf_result = v.state.is_end_opponent()
-        reward = _simulation(v.state)
+        reward, _ = _simulation_gdk(v.state) if use_gdk else _simulation(v.state)
         _backpropagation_PNS(v, reward, leaf_result)
+        if expanded:
+            nodes_expanded += 1
         n_iter += 1
-    print("Number of iterations: " + str(n_iter))
-    """print("Nach Bewertung sortiert: ")
-    root.child_nodes.sort(key=bewertung)
-    for child in root.child_nodes:
-        print(str(child.a) + ": " + str(child.q) + " / " + str(child.n) + " = " + str(child.q/child.n))
-    print("")
-    print("Nach Move sotiert: ")
-    root.child_nodes.sort(key=sort_by_action)
-    for child in root.child_nodes:
-        print(str(child.a) + ": " + str(child.q) + " / " + str(child.n) + " = " + str(child.q/child.n))"""
-    return _UCT_PNS(root, 0, C_pn).a
+    #print("Number of iterations: " + str(n_iter))
+    return _UCT(root, 0).a, n_iter, nodes_expanded
 
-def MCTS(board: yav.Board, c = np.sqrt(2), max_time = 15):
+def MCTS(board: yav.Board, c = np.sqrt(2), use_gdk=True, max_time = 15, plot=False):
     root = MCTNode(board, board.get_possible_actions())
     start_time = time.time()
     n_iter = 0
+
+    values_to_plot = []
+    nodes_expanded = 0
     while time.time() - start_time < max_time:
-        _MCTS_one_iteration(root, c)
+        if plot and root.child_nodes != []:
+            steps, expanded, uct_values = _MCTS_one_iteration(root, c,use_gdk, plot=plot)
+            values_to_plot.append({'time': time.time()-start_time,
+                               'uct': uct_values[0],
+                               'exploitation': uct_values[1],
+                               'exploration': uct_values[2]})
+        else:
+            steps, expanded = _MCTS_one_iteration(root, c,use_gdk)
+        if expanded:
+            nodes_expanded += 1
         n_iter += 1
-    print("Number of iterations: " + str(n_iter))
-    """print("Nach Bewertung sortiert: ")
-    root.child_nodes.sort(key=bewertung)
-    for child in root.child_nodes:
-        print(str(child.a) + ": " + str(child.q) + " / " + str(child.n) + " = " + str(child.q/child.n))
-    print("")
-    print("Nach Move sotiert: ")
-    root.child_nodes.sort(key=sort_by_action)
-    for child in root.child_nodes:
-        print(str(child.a) + ": " + str(child.q) + " / " + str(child.n) + " = " + str(child.q/child.n))"""
-    return _UCT(root, 0).a
+    #print("Number of iterations: " + str(n_iter))
+    if plot:
+        return _UCT(root, 0).a, n_iter, nodes_expanded, values_to_plot
+    return _UCT(root, 0).a, n_iter, nodes_expanded
 
-def _MCTS_one_iteration(root: MCTNode, c) -> int:
-    v = _selection(root, c)
-    reward = _simulation(v.state)
-    return _backpropagation_negamax(v, reward)
+def _MCTS_one_iteration(root: MCTNode, c, use_gdk, C_pn=0, plot=False):
+    if plot and root.child_nodes != []:
+        uct_values_at_root = _UCT(root, c, plot)
+    v, expanded = _selection(root, c, C_pn)
+    reward, steps = _simulation_gdk(v.state) if use_gdk else _simulation(v.state)
+    if plot and root.child_nodes != []:
+        return _backpropagation_negamax(v,reward) + steps, expanded, uct_values_at_root
+    return _backpropagation_negamax(v, reward) + steps, expanded
 
-def _selection(node: MCTNode, c) -> MCTNode:
-    while len(node.actions) == 0:
-        node = _UCT(node, c)
-    return _expansion(node)
-
-def _selection_PN(node: MCTNode, c, C_pn) -> MCTNode:
-    while len(node.actions) == 0:
-        node = _UCT_PNS(node, c, C_pn)
-    return _expansion(node)
+def _selection(node: MCTNode, c, C_pn=0) -> tuple[MCTNode, bool]:
+    while node.state.is_over == False:
+        if len(node.actions) == 0:
+            node = _UCT(node, c) if C_pn == 0 else _UCT_PNS(node, c, C_pn)
+        else:
+            return _expansion(node), True
+    return node, False
 
 def _expansion(node: MCTNode) -> MCTNode:
     np.random.shuffle(node.actions)
@@ -150,17 +136,24 @@ def _expansion(node: MCTNode) -> MCTNode:
     node.child_nodes.append(child)
     return child
 
-def _UCT(node: MCTNode, c) -> MCTNode:
+def _UCT(node: MCTNode, c, plot=False) -> MCTNode:
     num_children = len(node.child_nodes)
     values = np.zeros(num_children)
     children = node.child_nodes
     if node.death_moves != []:
         children = list(set(children) - set(node.death_moves))
     for i in range(num_children):
-        values[i] = (children[i].q/children[i].n) + c * np.sqrt(2*np.log(node.n)/children[i].n)
+        values[i] = (children[i].q/children[i].n) + c * np.sqrt(np.log(node.n)/children[i].n)
+
+    if plot:
+        i = np.argmax(values)
+        return [values[i], (children[i].q/children[i].n), c * np.sqrt(2*np.log(node.n)/children[i].n)]
     return children[np.argmax(values)]
 
-def _UCT_PNS(node: MCTNode, c, C_pn) -> MCTNode:
+
+# modified UCT for PN-MCTS
+
+def _UCT_PNS(node: MCTNode, c, C_pn, plot=False) -> MCTNode:
     num_children = len(node.child_nodes)
     children = node.child_nodes
 
@@ -180,6 +173,8 @@ def _UCT_PNS(node: MCTNode, c, C_pn) -> MCTNode:
     values = np.zeros(num_children)
     for i in range(num_children):
         values[i] = (children[i].q/children[i].n) + c * np.sqrt(2*np.log(node.n)/children[i].n + C_pn * (1 - pn_rank[children[i]] / max_rank))
+    if plot:
+        return [values[i], (children[i].q/children[i].n), c * np.sqrt(2*np.log(node.n)/children[i].n), (1 - pn_rank[children[i]] / max_rank)]
     return children[np.argmax(values)]
 
 def _rank(e: MCTNode):
@@ -188,77 +183,69 @@ def _rank(e: MCTNode):
 def _simulation(state: yav.Board) -> int:
     player = state.move_count % 2
     result = state.is_end()
+    steps = 0
     while result == 0:
         actions = state.get_possible_actions()
         state, result = state.simulate_move(actions[np.random.randint(0, len(actions))])
+        steps += 1
     if state.move_count % 2 != player:
         result = -result
-    return result
+    return result, steps
 
 def _backpropagation_negamax(node: MCTNode, reward) -> int:
     steps = 0
     while node is not None:
         node.n += 1
         node.q += reward
-        reward = -reward
+        if reward != 0.5:
+            reward = -reward
         node = node.parent
 
         steps += 1
     return steps
 
+
+# Backpropagation for PN-MCTS
+
 def _backpropagation_PNS(node: MCTNode, reward, result) -> None:
     node.PN = (0 if result == 1 else math.inf)
-    node.DPN = (math.inf if result == -1 else 0)
-    # Falls result == 0 oder == 0.5 müssen beide Zahlen 1 sein, dies wird schon bei der Initatilisierung der Node sichergestellt
-    
+    node.DPN = (math.inf if result == -1 or result == 0.5 else 0)
+    # Falls result == 0 oder müssen beide Zahlen 1 sein, dies wird schon bei der Initatilisierung der Node sichergestellt
+    update_parents = True
     while node is not None:
         node.n += 1
         node.q += reward
-        reward = -reward
+        if reward != 0.5:
+            reward = -reward
+
         parent = node.parent
         if parent is not None:
             if not parent.is_internal:
                 parent.is_internal = True
-                parent.PN = {"OR": math.inf, "AND": 0}[parent.PNS_type]
-                parent.DPN = {"OR": 0, "AND": math.inf}[parent.PNS_type]
-            if parent.PNS_type == "OR":
-                parent.PN = min(parent.PN, node.PN)
-                parent.DPN += node.DPN
-            else:
-                parent.PN += node.PN
-                parent.DPN = min(parent.DPN, node.DPN)
+            if update_parents:
+                pn, dpn = calculate_PN_DPN(parent)
+                if pn == parent.PN and dpn == parent.DPN:
+                    update_parents = False
+                parent.PN = pn
+                parent.DPN = dpn
+
         node = parent
 
-# Using General Domain Knowledge
-# Runs few simulations, is it possible to optimise?
+def calculate_PN_DPN(node: MCTNode) -> tuple[int, int]:
+    pn_list = [child.PN for child in node.child_nodes]
+    dpn_list = [child.DPN for child in node.child_nodes]
 
-def MCTS_gdk(board: yav.Board, c = np.sqrt(2), max_time = 15):
-    root = MCTNode(board, board.get_possible_actions())
-    start_time = time.time()
-    n_iter = 0
-    while time.time() - start_time < max_time:
-        _MCTS_one_iteration_gdk(root, c)
-        n_iter += 1
-    print("Number of iterations: " + str(n_iter))
-    """print("Nach Bewertung sortiert: ")
-    root.child_nodes.sort(key=bewertung)
-    for child in root.child_nodes:
-        print(str(child.a) + ": " + str(child.q) + " / " + str(child.n) + " = " + str(child.q/child.n))
-    print("")
-    print("Nach Move sotiert: ")
-    root.child_nodes.sort(key=sort_by_action)
-    for child in root.child_nodes:
-        print(str(child.a) + ": " + str(child.q) + " / " + str(child.n) + " = " + str(child.q/child.n))"""
-    return _UCT(root, 0).a
+    pn = (min(pn_list) if node.PNS_type == "OR" else sum(pn_list))
+    dpn = (sum(dpn_list) if node.PNS_type == "OR" else min(dpn_list))
 
-def _MCTS_one_iteration_gdk(root: MCTNode, c) -> int:
-    v = _selection(root, c)
-    reward = _simulation_gdk(v.state)
-    return _backpropagation_negamax(v, reward)
+    return pn, dpn
+
+# Simulation using General Domain Knowledge
 
 def _simulation_gdk(state:yav.Board) -> int:
     player = state.move_count % 2
     result = state.is_end()
+    steps = 0
     while result == 0:
         move = None
         move = find_winning_move(state)
@@ -270,9 +257,10 @@ def _simulation_gdk(state:yav.Board) -> int:
                     moves = state.get_possible_actions()
                     move = moves[np.random.randint(len(moves))]
         state, result = state.simulate_move(move)
+        steps += 1
     if state.move_count % 2 != player:
         result = -result
-    return result
+    return result, steps
 
 def find_winning_move(state: yav.Board):
     bitboard = state.current
@@ -342,7 +330,7 @@ def find_blocking_win(state: yav.Board):
     return None
 
 def find_not_losing(state: yav.Board):
-    seperating_bits = int("11111111111111111111000001111000000111000000011000000001000000000100000000110000000111000000111100000", 2)
+    seperating_bits = 0b11111111111111111111000001111000000111000000011000000001000000000100000000110000000111000000111100000
     to_avoid = []
 
     bitboard = state.current

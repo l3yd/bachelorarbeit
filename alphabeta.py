@@ -31,6 +31,7 @@ class Alpha_Beta:
         self.death_moves = []
 
         self.nodes_visited = 0
+        self.finished_depth = 0
 
     def _hash(self, board: yav.Board) -> int:
         """
@@ -72,6 +73,7 @@ class Alpha_Beta:
             try:
                 self.search_depth = current_depth
                 best_move, sudden_end = self.alpha_beta(current_depth)
+                self.finished_depth = current_depth
                 current_depth += 1
                 if detect_sudden_end_k != None and current_depth > detect_sudden_end_k:
                     break
