@@ -12,7 +12,7 @@ class TTNode:
         self.sudden_end = sudden_end
 
 class Alpha_Beta:
-    def __init__(self, board: yav.Board, search_depth = 5):
+    def __init__(self, board: yav.Board, search_depth = 5, use_tt = True):
         self.board = board
         self.search_depth = search_depth
         self.best_move = None
@@ -20,23 +20,27 @@ class Alpha_Beta:
         self.run_iter_deepening = False
         self.start_time = -1
         self.max_time = -1
-        self.tp_table: dict[int, TTNode] = {}
 
+        self.tp_table: dict[int, TTNode] = {}
+        self.use_tt = use_tt
+        self.current_hash = None
         # Pseudozufallszahlen für Zobrist Hashing
         self.table = np.random.randint(2**64-1,size=(81,2),dtype=np.uint64)
-        #self.move_second_player = np.random.randint(2**64-1,dtype=np.uint64)
 
         # Züge die zum sicheren Verlieren führen (für das Endgame von MCTS mit Alpha-Beta verwendet)
         self.death_moves = []
+
+        self.nodes_visited = 0
 
     def _hash(self, board: yav.Board) -> int:
         """
         Zobrist hashing für das gebene Board.
         """
+        if self.current_hash is not None:
+            return self.current_hash
+        
         hashcode = 0
         player = board.move_count % 2
-        """if player:
-            hashcode ^= self.move_second_player"""
         
         for pos in range(81):
             #bit = yav.position_to_bit(pos) ### position_to_bit kostet zu viel Zeit
@@ -47,9 +51,17 @@ class Alpha_Beta:
                 else:
                     belongs_to = (player+1) % 2
                 hashcode ^= self.table[pos][belongs_to]
+        self.current_hash = hashcode
         return hashcode
+    
+    def _update_hash(self, move: tuple[int, int], player:int):
+        """
+        Update Zobrist hash mit gegebenem Zug. Sowohl wenn ein Zug gespielt wird als auch wenn ein Zug zurückgenommen wird.
+        """
+        bit = yav.coords_to_bit(move)
+        self.current_hash ^= self.table[bit][player]
 
-    def iterative_deepening(self, max_time = 15):
+    def iterative_deepening(self, max_time = 15, detect_sudden_end_k = None):
         start_time = time.time()
         self.run_iter_deepening = True
         best_move = None
@@ -61,10 +73,10 @@ class Alpha_Beta:
                 self.search_depth = current_depth
                 best_move, sudden_end = self.alpha_beta(current_depth)
                 current_depth += 1
+                if detect_sudden_end_k != None and current_depth > detect_sudden_end_k:
+                    break
             except TimeoutError:
                 break
-        print("Zeit all Iterations: " + str(time.time()-start_time))
-        print(self.best_move)
         return best_move, sudden_end
     
     def alpha_beta(self, depth = -1):
@@ -72,10 +84,7 @@ class Alpha_Beta:
             # Falls alpha_beta nicht mit iterativer Tiefensuche aufgerufen wird
             depth = self.search_depth
         inf = math.inf
-        start_time = time.time()
-        print("")
         last_value, sudden_end = self._nega_max(self.board, depth, -inf, inf)
-        print("Zeit: " + str(time.time()-start_time))
         if self.best_move != None:
             return self.best_move, sudden_end
         else:
@@ -90,22 +99,25 @@ class Alpha_Beta:
         if self.run_iter_deepening:
             if time.time() - self.start_time > self.max_time:
                 raise TimeoutError("max time reached")
-
-        hash = self._hash(board)
-        entry = None
-        if hash in self.tp_table:
-            entry = self.tp_table[hash]
-            if entry.depth >= depth:
-                if entry.node_type == "EXACT":
+        if self.use_tt:
+            hash = self._hash(board)
+            entry = None
+            if hash in self.tp_table:
+                entry = self.tp_table[hash]
+                if entry.depth >= depth:
+                    if entry.node_type == "EXACT":
+                        self.nodes_visited += 1
+                        return entry.value, entry.sudden_end
+                    elif entry.node_type == "LOWER" and entry.value >= beta:
+                        alpha = max(alpha, entry.value)
+                    elif entry.node_type == "UPPER" and entry.value < alpha:
+                        beta = min(beta, entry.value)
+                if alpha >= beta:
+                    self.nodes_visited += 1
                     return entry.value, entry.sudden_end
-                elif entry.node_type == "LOWER" and entry.value >= beta:
-                    alpha = max(alpha, entry.value)
-                elif entry.node_type == "UPPER" and entry.value < alpha:
-                    beta = min(beta, entry.value)
-            if alpha >= beta:
-                return entry.value, entry.sudden_end
 
         if depth == 0 or board.is_over:
+            self.nodes_visited += 1
             return -evaluate(board), board.is_end_opponent() * (-1 if self.search_depth % 2 == 1 else 1)
         
         max_value = -math.inf
@@ -113,14 +125,22 @@ class Alpha_Beta:
         sudden_end = 1 if depth % 2 == 1 else -1 ### TODO is this correct?
 
         moves = board.get_possible_actions()
-        if self.run_iter_deepening and entry is not None:
+        if self.run_iter_deepening and self.best_move is not None and self.best_move in moves and depth%2 == self.search_depth%2:
+            moves.remove(self.best_move)
+            moves.insert(0, self.best_move)
+        if self.use_tt and entry is not None:
             moves.remove(entry.best_move)
             moves.insert(0, entry.best_move)
         
         for move in moves:
             new_board, result = board.simulate_move(move)
+            if self.current_hash is not None:
+                player = (new_board.move_count+1) % 2
+                self._update_hash(move, player)
             value, end = self._nega_max(new_board, depth-1, -beta, -alpha)
             value = -value
+            if self.current_hash is not None:
+                self._update_hash(move, player)
 
             if (depth % 2 == 0 and end > sudden_end) or (depth % 2 == 1 and end < sudden_end):
                 sudden_end = end
@@ -139,16 +159,18 @@ class Alpha_Beta:
 
         if depth == self.search_depth:
             self.best_move = best_move
-        
-        if max_value >= beta:
-            node_type = "LOWER"
-        elif max_value <= alpha:
-            node_type = "UPPER"
-        else:
-            node_type = "EXACT"
+
+        if self.use_tt:
+            if max_value >= beta:
+                node_type = "LOWER"
+            elif max_value <= alpha:
+                node_type = "UPPER"
+            else:
+                node_type = "EXACT"
+            self.tp_table[hash] = TTNode(depth, max_value, node_type, best_move, sudden_end)
 
         assert best_move is not None, f"best_move is None at depth {depth}"
-        self.tp_table[hash] = TTNode(depth, max_value, node_type, best_move, sudden_end)
+        self.nodes_visited += 1
         return max_value, sudden_end
 
 
@@ -168,9 +190,6 @@ bb_tb_left_one_gap = 68853957151
 bb_tb_right_two_row = 2291942662183741030400
 bb_tb_right_one_gap = 2236041621642674176
 
-"""
-TODO: z.B. |x-x-x| kann nicht zum gewinnen benutzt werden wird aber trozdem positiv bewertet
-"""
 def evaluate(board: yav.Board, defence = False, p_two_row = 5, p_one_gap = 5, p_two_gap = 20, p_four_threat = 41, debug=False):
     result = board.is_end_opponent()
     if result != 0:
