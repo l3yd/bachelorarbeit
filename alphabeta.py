@@ -4,12 +4,11 @@ import math
 import time
 
 class TTNode:
-    def __init__(self, depth, value, node_type, best_move, sudden_end):
+    def __init__(self, depth, value, node_type, best_move):
         self.depth = depth
         self.value = value
         self.node_type = node_type
         self.best_move = best_move
-        self.sudden_end = sudden_end
 
 class Alpha_Beta:
     def __init__(self, board: yav.Board, search_depth = 5, use_tt = True):
@@ -70,14 +69,23 @@ class Alpha_Beta:
         self.max_time = max_time
         self.start_time = time.time()
         while time.time() - self.start_time < self.max_time:
+            old_death_moves = self.death_moves
             try:
                 self.search_depth = current_depth
-                best_move, sudden_end = self.alpha_beta(current_depth)
+                self.death_moves = []
+                best_move, best_value = self.alpha_beta(current_depth)
+                if best_value >= 1e9:
+                    sudden_end = 1
+                elif self.death_moves != []:
+                    sudden_end = -1
+                else:
+                    sudden_end = 0
                 self.finished_depth = current_depth
                 current_depth += 1
                 if detect_sudden_end_k != None and current_depth > detect_sudden_end_k:
                     break
             except TimeoutError:
+                self.death_moves = old_death_moves
                 break
         return best_move, sudden_end
     
@@ -86,9 +94,9 @@ class Alpha_Beta:
             # Falls alpha_beta nicht mit iterativer Tiefensuche aufgerufen wird
             depth = self.search_depth
         inf = math.inf
-        last_value, sudden_end = self._nega_max(self.board, depth, -inf, inf)
+        best_value = self._nega_max(self.board, depth, -inf, inf)
         if self.best_move != None:
-            return self.best_move, sudden_end
+            return self.best_move, best_value
         else:
             print("this shouldnt happen, unless the game is over")
             random_moves = self.board.get_possible_actions()
@@ -109,22 +117,21 @@ class Alpha_Beta:
                 if entry.depth >= depth:
                     if entry.node_type == "EXACT":
                         self.nodes_visited += 1
-                        return entry.value, entry.sudden_end
+                        return entry.value
                     elif entry.node_type == "LOWER" and entry.value >= beta:
                         alpha = max(alpha, entry.value)
                     elif entry.node_type == "UPPER" and entry.value < alpha:
                         beta = min(beta, entry.value)
                 if alpha >= beta:
                     self.nodes_visited += 1
-                    return entry.value, entry.sudden_end
+                    return entry.value
 
         if depth == 0 or board.is_over:
             self.nodes_visited += 1
-            return -evaluate(board), board.is_end_opponent() * (-1 if self.search_depth % 2 == 1 else 1)
+            return -evaluate(board)
         
         max_value = -math.inf
         best_move = None
-        sudden_end = 1 if depth % 2 == 1 else -1 ### TODO is this correct?
 
         moves = board.get_possible_actions()
         if self.run_iter_deepening and self.best_move is not None and self.best_move in moves and depth%2 == self.search_depth%2:
@@ -144,11 +151,8 @@ class Alpha_Beta:
             if self.current_hash is not None:
                 self._update_hash(move, player)
 
-            if (depth % 2 == 0 and end > sudden_end) or (depth % 2 == 1 and end < sudden_end):
-                sudden_end = end
-            if depth == self.search_depth:
-                if end == -1:
-                    self.death_moves.append(move)
+            if depth == self.search_depth and value <= -1e9 :
+                self.death_moves.append(move)
 
             if value > max_value:
                 max_value = value
@@ -169,11 +173,11 @@ class Alpha_Beta:
                 node_type = "UPPER"
             else:
                 node_type = "EXACT"
-            self.tp_table[hash] = TTNode(depth, max_value, node_type, best_move, sudden_end)
+            self.tp_table[hash] = TTNode(depth, max_value, node_type, best_move)
 
         assert best_move is not None, f"best_move is None at depth {depth}"
         self.nodes_visited += 1
-        return max_value, sudden_end
+        return max_value
 
 
 # bitboards where the coordinates where the border blocks a row beeing completed are set to 1 and the rest to 0

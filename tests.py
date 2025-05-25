@@ -13,7 +13,7 @@ Dieses Skript wurde für das Testsen während der Implementierung der Algorithme
 Die Tests sind nicht vollständig und werden nicht mehr genutzt.
 """
 
-def game(board:yav.Board, players = ["human", "human"], start = np.random.randint(1,3), printing = True, C = [np.sqrt(2), np.sqrt(2)]):
+def game(board:yav.Board, players = ["human", "human"], start = np.random.randint(1,3), printing = True, C = [np.sqrt(2), 0.7]):
     board.reset_board()
     if printing:
         if players[0] == "human" or players[1] == "human":
@@ -466,5 +466,20 @@ if __name__ == '__main__':
             print(f'Iterative Deepening took {time_used} seconds for search depth {i}.')
             Board.do_move(coords)
             Board.print_board()
+    elif arg == "detect_sudden_end":
+        #first_player = [(2,3),(5,3),(2,0),(5,6),(3,3),(2,2),(4,2),(0,0)]
+        #second_player = [(3,4),(4,5),(6,7),(5,5),(4,3),(2,1),(3,1),(2,5)]
+        first_player = [(2,3),(5,3),(2,0),(5,6),(3,3),(2,2),(0,3),(4,2)]#,(0,0)]
+        second_player = [(3,4),(4,5),(6,7),(5,5),(4,3),(2,1),(1,3),(3,1)]
+        Board.setup(first_player, second_player)
+        Board.print_board()
+        ab_object = ab.Alpha_Beta(Board, 4, use_tt=True)
+        move, sudden_end = ab_object.iterative_deepening(max_time=1,detect_sudden_end_k=4)
+        
+        print(f'{move} | {sudden_end}')
+        print(ab_object.death_moves)
+        #move , _, _, sudden_end = mcts.MCTS_alphabeta(Board,0.7,4,max_time=10)
+        print(f'{move} | {sudden_end}')
+        
     else:
         print("Name of test not found")
