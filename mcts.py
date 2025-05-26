@@ -58,7 +58,7 @@ def MCTS_alphabeta(board: yav.Board, c = np.sqrt(2), k = 4, use_gdk=True, max_ti
             ab_object = ab.Alpha_Beta(board,k)
             move, sudden_end = ab_object.iterative_deepening(detect_sudden_end_k=k)
             if sudden_end == 1:
-                print(f"Number of iterations: {n_iter} and sudden win was found!")
+                #print(f"Number of iterations: {n_iter} and sudden win was found!")
                 return move, n_iter, nodes_expanded, True
             elif sudden_end == -1:
                 root.death_moves = ab_object.death_moves

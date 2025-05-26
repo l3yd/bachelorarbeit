@@ -146,7 +146,7 @@ class Alpha_Beta:
             if self.current_hash is not None:
                 player = (new_board.move_count+1) % 2
                 self._update_hash(move, player)
-            value, end = self._nega_max(new_board, depth-1, -beta, -alpha)
+            value = self._nega_max(new_board, depth-1, -beta, -alpha)
             value = -value
             if self.current_hash is not None:
                 self._update_hash(move, player)
