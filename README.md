@@ -11,7 +11,7 @@
 - `mcts.py`: Alle Versionen der Monte Carlo Tree Search
 - `alphabeta.py`: Alle Versionen der Alpha-Beta Suche
 - `experiments.ipynb`: Hier wurden die Eexperimente aufgeführt und die Daten verarbeitet und geplottet
-- data: Ordner in dem die erhobenen Daten gespeichert wurden
+- `data`: Ordner in dem die erhobenen Daten gespeichert wurden
 - `tests.py`: Mit dieser Datei wurde während der Implemtierung getestet.
 - `game.py`: starten von einzelnen Spilen; kann in der commandline mit den Argumenten aus folgender Liste aufgerufen werden:
     - human       (Menschlicher Spieler
