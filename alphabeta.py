@@ -181,6 +181,15 @@ class Alpha_Beta:
 
 
 # bitboards where the coordinates where the border blocks a row beeing completed are set to 1 and the rest to 0
+
+"""
+Liste an Bitboards wo alle Felder auf 1 gesetzt sind,
+an denen bei den entsprechenden Überprüfungen auf eine
+Reihe in der Bewertungsfunktion das Bit auf 1 sitzen würde.
+Bsp:
+für die Überprüfung ob eine reihe aus zwei Steinen in der Vertikalen welche nicht nach links von
+dem rand blockiert ist wird bb_ver_left_two_row verwendet
+"""
 bb_ver_left_two_row = 226895168490722393064963
 bb_ver_left_one_gap = 75631722830240797688321
 bb_ver_right_two_row = 908468717675168296611852
